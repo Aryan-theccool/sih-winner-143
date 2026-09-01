@@ -5,7 +5,7 @@ import { TripsLayer } from '@deck.gl/geo-layers'
 import { PathStyleExtension } from '@deck.gl/extensions'
 import { posAt } from '../api.js'
 import { vesselAt, speedVectorEnd, vesselTypeColor } from '../utils/vesselMotion.js'
-import { getShipIconAtlas } from '../utils/shipIcon.js'
+import { getShipIconAtlas, iconAngleFromHeading } from '../utils/shipIcon.js'
 
 const CLASS_COLORS = {
   oil_confirmed: [220, 38, 55],
@@ -32,6 +32,20 @@ function featToPolygonList(fc) {
     for (const poly of polys) out.push({ polygon: poly, props: f.properties })
   }
   return out
+}
+
+/** Shrink polygon ring toward centroid for dense core fill */
+function polygonCore(ring, centroid, factor = 0.68) {
+  if (!centroid?.length) return ring
+  const [cx, cy] = centroid
+  return ring.map(([lon, lat]) => [cx + (lon - cx) * factor, cy + (lat - cy) * factor])
+}
+
+function slickCentroid(props, ring) {
+  if (props.centroid?.length === 2) return props.centroid
+  let sx = 0; let sy = 0
+  for (const [lon, lat] of ring) { sx += lon; sy += lat }
+  return [sx / ring.length, sy / ring.length]
 }
 
 function envGrid(aoi, kind) {
@@ -75,7 +89,7 @@ export function buildLayers({
     layers.push(new BitmapLayer({
       id: 'sar', image: '/api/scene.png',
       bounds: [b.lon_min, b.lat_min, b.lon_max, b.lat_max],
-      opacity: show.oil ? 0.35 : 0.5, pickable: false,
+      opacity: show.oil ? 0.12 : 0.5, pickable: false,
     }))
   }
 
@@ -111,9 +125,14 @@ export function buildLayers({
     layers.push(new PolygonLayer({
       id: 'mask', data: featToPolygonList(detection.detectability),
       getPolygon: (d) => d.polygon[0],
-      getFillColor: [100, 116, 139, 55], getLineColor: [148, 163, 184, 150],
-      getLineWidth: 1, lineWidthUnits: 'pixels', stroked: true, filled: true, pickable: true,
-      getTooltip: () => 'Low detectability: wind outside 3–12 m/s',
+      getFillColor: [245, 158, 11, 42],
+      getLineColor: [245, 158, 11, 160],
+      getLineWidth: 1.5,
+      lineWidthUnits: 'pixels',
+      stroked: true,
+      filled: true,
+      pickable: true,
+      getTooltip: () => 'NOT ASSESSABLE — wind outside 3–12 m/s gate',
     }))
   }
 
@@ -133,9 +152,14 @@ export function buildLayers({
       const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates
       return polys.map((p) => ({ polygon: p[0], level: f.properties.level }))
     })
+    const hourFade = 0.65 + 0.35 * (driftHour / 24)
     layers.push(new PolygonLayer({
       id: 'origin-cloud', data: cloudPolys, getPolygon: (d) => d.polygon,
-      getFillColor: (d) => CLOUD_HEAT[d.level], getLineColor: (d) => CLOUD_LINE[d.level],
+      getFillColor: (d) => {
+        const base = CLOUD_HEAT[d.level]
+        return [base[0], base[1], base[2], Math.round(base[3] * hourFade)]
+      },
+      getLineColor: (d) => CLOUD_LINE[d.level],
       getLineWidth: (d) => (d.level === 'p50' ? 2.5 : 1), lineWidthUnits: 'pixels',
       stroked: true, filled: true, pickable: false,
     }))
@@ -195,7 +219,7 @@ export function buildLayers({
   if (vessels && show.ships) {
     const rankOf = {}
     if (ranking) ranking.ranking.slice(0, 3).forEach((r, i) => { rankOf[r.mmsi] = i })
-    const { atlas, mapping, typeKey } = getShipIconAtlas()
+    const iconPack = getShipIconAtlas()
 
     if (show.tracks !== false) {
       layers.push(new TripsLayer({
@@ -219,11 +243,30 @@ export function buildLayers({
         id: 'ais-gaps', data: dashes, getPath: (d) => d.coords,
         getColor: (d) => {
           const i = rankOf[d.mmsi]
-          return i !== undefined ? [...SUSPECT_COLORS[i], 220] : [245, 158, 11, 180]
+          return i !== undefined ? [...SUSPECT_COLORS[i], 180] : [245, 158, 11, 140]
         },
-        getWidth: 2.5, widthUnits: 'pixels', getDashArray: [6, 4], dashJustified: true,
+        getWidth: 2.5, widthUnits: 'pixels', getDashArray: [8, 6], dashJustified: true,
         extensions: [new PathStyleExtension({ dash: true })], pickable: false,
       }))
+
+      const gapMarkers = []
+      for (const v of vessels) {
+        for (const seg of v.dark_segments || []) {
+          if (seg.length < 2) continue
+          gapMarkers.push({ pos: [seg[0][0], seg[0][1]], kind: 'drop', mmsi: v.mmsi })
+          gapMarkers.push({ pos: [seg[seg.length - 1][0], seg[seg.length - 1][1]], kind: 'resume', mmsi: v.mmsi })
+        }
+      }
+      if (gapMarkers.length) {
+        layers.push(new ScatterplotLayer({
+          id: 'ais-gap-markers', data: gapMarkers, getPosition: (d) => d.pos,
+          getRadius: 900 + 500 * (0.5 + 0.5 * Math.sin(pulse / 1.8)),
+          radiusUnits: 'meters', radiusMinPixels: 6,
+          getFillColor: (d) => (d.kind === 'drop' ? [245, 158, 11, 90] : [34, 211, 238, 90]),
+          getLineColor: (d) => (d.kind === 'drop' ? [245, 158, 11, 255] : [34, 211, 238, 255]),
+          getLineWidth: 2, lineWidthUnits: 'pixels', stroked: true, pickable: false,
+        }))
+      }
     }
 
     const heads = []
@@ -240,21 +283,20 @@ export function buildLayers({
       getColor: [200, 220, 240, 160], getWidth: 2, widthUnits: 'pixels', pickable: false,
     }))
 
-    layers.push(new IconLayer({
+    if (iconPack) {
+      const { atlas, mapping, typeKey } = iconPack
+      layers.push(new IconLayer({
       id: 'ship-icons', data: heads, pickable: true,
+      billboard: false,
       iconAtlas: atlas, iconMapping: mapping,
       getIcon: (d) => typeKey(d.type),
       getPosition: (d) => d.position,
       getSize: (d) => {
         const i = rankOf[d.mmsi]
-        return i !== undefined ? 22 : Math.min(18, 10 + (d.length_m || 100) / 18)
+        return i !== undefined ? 36 : Math.min(32, 20 + (d.length_m || 100) / 12)
       },
-      getAngle: (d) => -d.heading,
-      getColor: (d) => {
-        const i = rankOf[d.mmsi]
-        if (i !== undefined) return [255, 255, 255, 255]
-        return [74, 222, 128, 255]
-      },
+      getAngle: (d) => iconAngleFromHeading(d.heading),
+      getColor: [255, 255, 255, 255],
       onClick: hoverInfo?.onClickVessel,
       getTooltip: ({ object }) => {
         if (!object) return null
@@ -263,6 +305,7 @@ export function buildLayers({
         return `${object.name} (${object.mmsi})\n${object.type} · ${object.speed.toFixed(1)} kn · ${Math.round(object.heading)}°${rankLine}\n${object.inGap ? 'AIS GAP' : 'AIS active'}`
       },
     }))
+    }
 
     // Vessel name labels — professional tracking style
     const labelData = heads.slice(0, 24).map((d) => ({
@@ -312,64 +355,70 @@ export function buildLayers({
     }))
   }
 
-  // Oil slick — render on top of vessels so it's visible on the ocean
+  // Oil slick — solid black core + dark gray halo (no grainy SAR bleed-through)
   const pending = layers._pendingSlick
   if (pending) {
-    const { detection: det, mapFocus, pulse: pls } = pending
+    const { detection: det, mapFocus } = pending
     const slickPolys = featToPolygonList(det.slick)
     const highlighted = mapFocus === 'slick'
     const confirmed = slickPolys.filter((d) => d.props.class === 'oil_confirmed')
+    const lookAlikes = slickPolys.filter((d) => d.props.class !== 'oil_confirmed')
 
+    // Outer halo — slightly lighter dark gray
     if (confirmed.length) {
-      // Interior probability gradient — geospatial overlay, not cartoon blob
       layers.push(new PolygonLayer({
-        id: 'slick-interior', data: confirmed,
+        id: 'slick-halo', data: confirmed,
         getPolygon: (d) => d.polygon[0],
-        getFillColor: [90, 95, 100, highlighted ? 130 : 100],
+        getFillColor: highlighted ? [48, 48, 52, 230] : [42, 42, 46, 215],
         getLineColor: [0, 0, 0, 0],
         stroked: false, filled: true, pickable: false,
       }))
     }
 
-    layers.push(new PolygonLayer({
-      id: 'slicks-fill', data: slickPolys,
-      getPolygon: (d) => d.polygon[0],
-      getFillColor: (d) => {
-        if (d.props.class !== 'oil_confirmed') return [148, 163, 184, 40]
-        return [180, 90, 90, highlighted ? 80 : 55]
-      },
-      getLineColor: [0, 0, 0, 0],
-      stroked: false, filled: true, pickable: true,
-      onClick: hoverInfo?.onClickSlick,
-    }))
-
-    layers.push(new PolygonLayer({
-      id: 'slicks', data: slickPolys,
-      getPolygon: (d) => d.polygon[0],
-      getFillColor: [0, 0, 0, 0],
-      getLineColor: (d) => {
-        if (d.props.class === 'oil_confirmed') return [220, 38, 55, 255]
-        return [245, 158, 11, 180]
-      },
-      getLineWidth: (d) => (d.props.class === 'oil_confirmed' ? 2 : 1.5),
-      lineWidthUnits: 'pixels',
-      stroked: true, filled: false, pickable: true,
-      onClick: hoverInfo?.onClickSlick,
-      getTooltip: ({ object }) => object &&
-        `DETECTED SLICK\nOil-slick probability ${Math.round(object.props.confidence * 100)}%\n${object.props.area_km2} km²`,
-    }))
-
-    const obj = det.summary?.objects?.find((o) => o.class === 'oil_confirmed')
-    if (obj?.centroid) {
-      layers.push(new ScatterplotLayer({
-        id: 'slick-centroid', data: [obj.centroid], getPosition: (d) => d,
-        getRadius: 600 + (highlighted ? 200 * Math.sin(pls / 2) : 0),
-        radiusUnits: 'meters',
-        getFillColor: [220, 38, 55, highlighted ? 120 : 70],
-        getLineColor: [255, 255, 255, 255],
-        getLineWidth: 3, lineWidthUnits: 'pixels', stroked: true, pickable: false,
+    // Look-alike fringe — muted gray, lower emphasis
+    if (lookAlikes.length) {
+      layers.push(new PolygonLayer({
+        id: 'slick-lookalike', data: lookAlikes,
+        getPolygon: (d) => d.polygon[0],
+        getFillColor: [55, 55, 60, 140],
+        getLineColor: [0, 0, 0, 0],
+        stroked: false, filled: true, pickable: true,
+        onClick: hoverInfo?.onClickSlick,
       }))
     }
+
+    // Dense black core — main spill body
+    const cores = confirmed.map((d) => {
+      const ring = d.polygon[0]
+      const centroid = slickCentroid(d.props, ring)
+      return { polygon: [polygonCore(ring, centroid, 0.68)], props: d.props }
+    })
+    if (cores.length) {
+      layers.push(new PolygonLayer({
+        id: 'slick-core', data: cores,
+        getPolygon: (d) => d.polygon[0],
+        getFillColor: highlighted ? [0, 0, 0, 252] : [0, 0, 0, 240],
+        getLineColor: [0, 0, 0, 0],
+        stroked: false, filled: true, pickable: true,
+        onClick: hoverInfo?.onClickSlick,
+        getTooltip: ({ object }) => object &&
+          `DETECTED SLICK\nOil-slick probability ${Math.round(object.props.confidence * 100)}%\n${object.props.area_km2} km²`,
+      }))
+    }
+
+    const slickOutlines = confirmed
+      .map((d) => ({ path: [...d.polygon[0], d.polygon[0][0]], props: d.props }))
+    if (slickOutlines.length) {
+      layers.push(new PathLayer({
+        id: 'slick-outline', data: slickOutlines, getPath: (d) => d.path,
+        getColor: highlighted ? [255, 90, 90, 255] : [255, 77, 77, 220],
+        getWidth: highlighted ? 2.5 : 2, widthUnits: 'pixels',
+        getDashArray: [6, 4], dashJustified: true,
+        extensions: [new PathStyleExtension({ dash: true })],
+        pickable: false,
+      }))
+    }
+
     delete layers._pendingSlick
   }
 

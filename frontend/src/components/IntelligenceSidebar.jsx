@@ -6,6 +6,8 @@ import EvidencePanel from './panels/EvidencePanel'
 import CaseReportPanel from './panels/CaseReportPanel'
 import VesselIntelCard from './VesselIntelCard'
 import ExplainAttribution from './ExplainAttribution'
+import EvidentiaryLadder from './EvidentiaryLadder'
+import EvidenceBanner from './EvidenceBanner'
 
 const TABS = [
   { id: 'detection', label: 'DETECTION' },
@@ -18,7 +20,7 @@ const TABS = [
 export default function IntelligenceSidebar(props) {
   const {
     view, setView, mapFocus, selectedMmsi, ranking, vessels, simTime,
-    detection, manifest, showExplain, setShowExplain,
+    manifest, showExplain, setShowExplain,
   } = props
 
   const tab = view === 'map' ? 'detection' : view
@@ -27,6 +29,8 @@ export default function IntelligenceSidebar(props) {
 
   return (
     <aside className="sn-panel">
+      <EvidenceBanner manifest={manifest} />
+
       <div className="sn-panel-tabs">
         {TABS.map((t) => (
           <button
@@ -39,6 +43,8 @@ export default function IntelligenceSidebar(props) {
           </button>
         ))}
       </div>
+
+      <EvidentiaryLadder ranking={ranking} compact={tab !== 'evidence'} />
 
       {mapFocus === 'vessel' && selectedVessel && (
         <VesselIntelCard

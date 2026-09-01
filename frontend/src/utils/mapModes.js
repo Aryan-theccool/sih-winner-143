@@ -13,7 +13,7 @@ export function layersForMode(modeId) {
     investigation: {
       sar: true, oil: true, tracks: true, flow: false,
       current: false, wind: false, waves: false,
-      ships: true, backtrack: true, gaps: false, mask: false,
+      ships: true, backtrack: true, gaps: true, mask: false,
     },
     oil_flow: {
       sar: false, oil: true, tracks: false, flow: true,

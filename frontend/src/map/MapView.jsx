@@ -4,6 +4,7 @@ import { Map as MapLibre } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { buildLayers } from './layers'
 import MapChrome from '../components/MapChrome'
+import { loadShipIconAtlas } from '../utils/shipIcon.js'
 
 const BASEMAP = {
   version: 8,
@@ -29,6 +30,11 @@ export default function MapView(props) {
 
   const [basemapOk, setBasemapOk] = useState(true)
   const [viewState, setViewState] = useState(DEFAULT_VIEW)
+  const [shipIconsReady, setShipIconsReady] = useState(false)
+
+  useEffect(() => {
+    loadShipIconAtlas().then(() => setShipIconsReady(true)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const obj = detection?.summary?.objects?.find((o) => o.class === 'oil_confirmed')
@@ -47,7 +53,7 @@ export default function MapView(props) {
   const onClick = useCallback((info) => {
     if (info.layer?.id === 'ship-icons' && info.object) {
       onSelectVessel?.(info.object.mmsi)
-    } else if (info.layer?.id === 'slicks' || info.layer?.id === 'slicks-fill') {
+    } else if (info.layer?.id === 'slick-core' || info.layer?.id === 'slick-halo') {
       onClickSlick(info)
     } else if (!info.object) {
       onSelectVessel?.(null)
@@ -59,11 +65,14 @@ export default function MapView(props) {
     [props.caseInfo, props.detection, props.backtrack, props.forecast,
      props.manifest, props.vessels, props.ranking, props.simTime,
      props.driftHour, props.pulse, props.show, props.tMin, props.selectedMmsi,
-     props.originMode, props.flowMode, props.reducedMotion, props.flowHour, mapFocus],
+     props.originMode, props.flowMode, props.reducedMotion, props.flowHour, mapFocus, shipIconsReady],
   )
 
   return (
     <div className="map-stage">
+      {mapMode === 'vessel_replay' && !props.reducedMotion && (
+        <div className="mc-radar-sweep" aria-hidden="true" />
+      )}
       <DeckGL
         viewState={viewState}
         onViewStateChange={({ viewState: vs }) => setViewState(vs)}
@@ -88,8 +97,8 @@ export default function MapView(props) {
         onFlowPlay={onFlowPlay}
         flowHour={flowHour}
         setFlowHour={setFlowHour}
-        onTraceOrigin={onTraceOrigin}
-        onViewOilFlow={onViewOilFlow}
+        show={props.show}
+        setShow={props.setShow}
       />
     </div>
   )

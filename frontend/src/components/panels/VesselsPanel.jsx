@@ -1,6 +1,7 @@
 import React from 'react'
 import { FEATURE_LABELS, featurePct } from '../../utils/caseAnalytics'
 import { vesselAt } from '../../utils/vesselMotion'
+import ShapWaterfall from '../ShapWaterfall'
 
 function CandidateCard({ r, rank, selectedMmsi, onFocus, simTime, releaseWindow }) {
   const score = Math.round(r.score * 100)
@@ -43,6 +44,10 @@ function CandidateCard({ r, rank, selectedMmsi, onFocus, simTime, releaseWindow 
             </div>
           ))}
         </div>
+      )}
+
+      {rank <= 3 && r.shap && (
+        <ShapWaterfall candidate={r} compact={rank > 1} />
       )}
 
       <div className="cand-metrics">

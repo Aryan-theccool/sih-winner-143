@@ -10,7 +10,7 @@ const SPEEDS = [
 const fmtDay = (epoch) =>
   new Date(epoch * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()
 
-export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, onSpeed, onSimTime, t0, releaseWindow }) {
+export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, onSpeed, onSimTime }) {
   const days = useMemo(() => {
     const out = []
     const d0 = new Date(tMin * 1000)
@@ -24,7 +24,8 @@ export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, o
   }, [tMin, tMax])
 
   const pct = ((simTime - tMin) / (tMax - tMin)) * 100
-  const clockStr = new Date(simTime * 1000).toISOString().slice(0, 16).replace('T', ' ')
+  const d = new Date(simTime * 1000)
+  const clockStr = `${String(d.getUTCDate()).padStart(2, '0')} ${d.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()} ${d.toISOString().slice(11, 16)} UTC`
 
   return (
     <footer className="sn-timeline">
@@ -51,7 +52,7 @@ export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, o
         </div>
         <div className="sn-tl-rail">
           <div className="sn-tl-playhead" style={{ left: `${pct}%` }}>
-            <span className="mono">{clockStr} UTC</span>
+            <span className="mono">{clockStr}</span>
           </div>
           <input
             className="sn-tl-slider"
@@ -67,9 +68,18 @@ export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, o
       </div>
 
       <div className="sn-tl-utils">
-        <button type="button" title="Bookmark">🔖</button>
-        <button type="button" title="Screenshot">📷</button>
-        <button type="button" title="Expand">⛶</button>
+        <button type="button" title="Bookmark" aria-label="Bookmark">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" /></svg>
+        </button>
+        <button type="button" title="Screenshot" aria-label="Screenshot">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
+        </button>
+        <button type="button" title="Fullscreen" aria-label="Fullscreen">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3" /></svg>
+        </button>
+        <button type="button" title="Layout" aria-label="Layout">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="18" /><rect x="14" y="3" width="7" height="8" /><rect x="14" y="13" width="7" height="8" /></svg>
+        </button>
       </div>
     </footer>
   )

@@ -5,75 +5,95 @@ import { MAP_MODES, FLOW_NL } from '../utils/mapModes'
 
 const FORECAST_H = [6, 12, 24, 48]
 
+const LAYER_TOGGLES = [
+  { key: 'sar', label: 'SAR raster' },
+  { key: 'oil', label: 'Detection' },
+  { key: 'backtrack', label: 'Origin cloud' },
+  { key: 'ships', label: 'Vessel radar' },
+  { key: 'gaps', label: 'Dark-vessel flags' },
+  { key: 'mask', label: 'Detectability mask' },
+]
+
 export default function MapChrome({
   caseInfo, detection, manifest, mapMode, setMapMode,
   viewState, flowPlaying, onFlowPlay, flowHour, setFlowHour,
-  onTraceOrigin, onViewOilFlow,
+  show, setShow,
 }) {
-  const [showLegend, setShowLegend] = useState(false)
+  const [showLayers, setShowLayers] = useState(false)
+  const [showLegend, setShowLegend] = useState(true)
   const char = slickCharacterisation(detection, manifest)
   const originPct = originConfidence(manifest)
-  const rw = manifest?.origin_estimate?.estimated_release_window_utc
   const scene = caseInfo?.scene
 
   const lat = viewState?.latitude?.toFixed(4) ?? '—'
   const lon = viewState?.longitude?.toFixed(4) ?? '—'
 
+  const toggleLayer = (key) => {
+    setShow?.((s) => ({ ...s, [key]: !s[key] }))
+  }
+
   return (
     <>
-      {/* Sensor metadata — top left */}
       <div className="mc-sensor">
         <div className="mc-sensor-row"><span>SENSOR</span><b className="mono">Sentinel-1 IW GRDH</b></div>
         <div className="mc-sensor-row mono">
-          {caseInfo?.t0_utc?.slice(0, 10).replace(/-/g, ' ').toUpperCase().replace('2025', '2025')} · {caseInfo?.t0_utc?.slice(11, 16)} UTC
+          <span>DATE</span><b>{caseInfo?.t0_utc?.slice(0, 10).replace(/-/g, ' ').toUpperCase()}</b>
         </div>
         <div className="mc-sensor-row"><span>Orbit</span><b>DESCENDING</b></div>
         <div className="mc-sensor-row"><span>Resolution</span><b className="mono">{scene?.resolution_m ?? 10} m</b></div>
       </div>
 
-      {/* Slick callout */}
       {char && mapMode !== 'origin' && (
         <div className="mc-callout mc-callout-slick">
-          <span className="mc-callout-title">Detected Slick</span>
-          <span className="mc-callout-val mono">{char.area} km² · P: {char.probability}%</span>
-        </div>
-      )}
-
-      {/* Origin callout */}
-      {rw && (mapMode === 'investigation' || mapMode === 'origin') && (
-        <div className="mc-callout mc-callout-origin">
-          <span className="mc-callout-title">Probable Origin</span>
           <span className="mc-callout-val mono">
-            {rw[0].slice(8, 10)} JUN 2025 · {rw[0].slice(11, 16)}–{rw[1].slice(11, 16)} UTC
+            Detected Slick | {char.area} km² | P: {char.probability}%
           </span>
-          <span className="mc-callout-sub mono">P: {originPct}% · 42 km²</span>
         </div>
       )}
 
-      {/* Coordinates + scale — bottom left */}
+      {(mapMode === 'investigation' || mapMode === 'origin') && (
+        <div className="mc-callout mc-callout-origin">
+          <span className="mc-callout-val mono">
+            Probable Origin | P: {originPct}% | Area: 42 km²
+          </span>
+        </div>
+      )}
+
       <div className="mc-coords">
         <span className="mono">{lat}° N, {lon}° E</span>
         <div className="mc-scale">
           <div className="mc-scale-bar" />
           <span className="mono">20 km</span>
         </div>
-        <div className="mc-map-tools">
-          <button type="button" onClick={() => setShowLegend((l) => !l)}>LAYERS</button>
-          <button type="button" className={showLegend ? 'on' : ''} onClick={() => setShowLegend((l) => !l)}>LEGEND</button>
-        </div>
       </div>
 
       {showLegend && (
         <div className="mc-legend">
-          <div><span className="lg-slick" /> SAR detected slick</div>
-          <div><span className="lg-origin" /> Probable origin (model)</div>
-          <div><span className="lg-vessel" /> AIS vessel track</div>
-          <div><span className="lg-drift" /> Back-traced trajectory</div>
+          <div className="mc-legend-title">LEGEND</div>
+          <div><span className="lg-slick lg-dash" /> Detected slick</div>
+          <div><span className="lg-origin" /> Probable origin</div>
+          <div><span className="lg-vessel" /> Vessel</div>
+          <div><span className="lg-drift" /> AIS track</div>
+          <div><span className="lg-gap" /> Dark-vessel gap</div>
         </div>
       )}
 
-      {/* Mode selector — bottom center on map */}
-      <div className="mc-modes" role="tablist">
+      {showLayers && show && (
+        <div className="mc-layers-pop panel-enter">
+          <div className="mc-layers-title">LAYER TOGGLE</div>
+          {LAYER_TOGGLES.map((l) => (
+            <label key={l.key}>
+              <input type="checkbox" checked={!!show[l.key]} onChange={() => toggleLayer(l.key)} />
+              {l.label}
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className="mc-toolbar" role="tablist">
+        <button type="button" className={showLayers ? 'active' : ''} onClick={() => setShowLayers((l) => !l)}>LAYERS</button>
+        <button type="button" className={showLegend ? 'active' : ''} onClick={() => setShowLegend((l) => !l)}>LEGEND</button>
+        <span className="mc-toolbar-sep" />
         {MAP_MODES.filter((m) => m.id !== 'evidence').map((m) => (
           <button
             key={m.id}
@@ -89,7 +109,7 @@ export default function MapChrome({
       </div>
 
       {mapMode === 'oil_flow' && (
-        <div className="mc-flow-panel">
+        <div className="mc-flow-panel panel-enter">
           <p className="mc-flow-nl">{FLOW_NL}</p>
           <div className="mc-flow-row">
             <button type="button" className="mc-flow-btn" onClick={onFlowPlay}>
