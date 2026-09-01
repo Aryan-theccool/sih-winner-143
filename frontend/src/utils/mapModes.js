@@ -1,12 +1,41 @@
 /** Map mode presets — only show layers relevant to the active investigation phase */
 
 export const MAP_MODES = [
-  { id: 'investigation', label: 'INVESTIGATION' },
-  { id: 'oil_flow', label: 'OIL FLOW' },
-  { id: 'vessel_replay', label: 'VESSEL REPLAY' },
-  { id: 'origin', label: 'ORIGIN RECONSTRUCTION' },
-  { id: 'evidence', label: 'EVIDENCE' },
+  {
+    id: 'investigation',
+    label: 'INVESTIGATION',
+    short: 'Case map',
+    desc: 'Slick, origin cloud and vessel tracks together — the default view for reading the whole case.',
+  },
+  {
+    id: 'oil_flow',
+    label: 'OIL FLOW',
+    short: 'Where the oil goes',
+    desc: 'Forward forecast only: currents and wind pushing the slick over the next 6–48 hours.',
+  },
+  {
+    id: 'vessel_replay',
+    label: 'VESSEL REPLAY',
+    short: 'Ship movement',
+    desc: 'Animated AIS tracks for the 48 hours before detection. Use the timeline below the map to scrub.',
+  },
+  {
+    id: 'origin',
+    label: 'ORIGIN RECONSTRUCTION',
+    short: 'Where it began',
+    desc: 'Backward drift only. Drag the T− hours scrubber to watch the probability cloud tighten toward a release area.',
+  },
+  {
+    id: 'evidence',
+    label: 'EVIDENCE',
+    short: 'Proof layers',
+    desc: 'Every layer at once — the view that matches what the exported dossier contains.',
+  },
 ]
+
+export function modeById(id) {
+  return MAP_MODES.find((m) => m.id === id) || MAP_MODES[0]
+}
 
 export function layersForMode(modeId) {
   const presets = {

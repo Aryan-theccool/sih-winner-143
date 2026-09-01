@@ -1,31 +1,39 @@
 import React from 'react'
 import { REGULATORY } from '../utils/caseAnalytics'
+import { Term } from './Glossary'
 
+/** Maps the case onto real instruments, and states what each one still needs. */
 export default function RegulatoryPanel() {
   return (
-    <section className="regulatory-section">
-      <h3 className="panel-hero-title">REGULATORY RELEVANCE</h3>
-      <p className="disclaimer">Potential regulatory relevance — human authority review required. Does not state legal violation.</p>
+    <div className="sn-reg">
+      <p className="sn-reg-intro">
+        Potential relevance only. A <Term k="unclos">human authority</Term> decides whether it applies — the
+        platform never states that an offence occurred.
+      </p>
       {REGULATORY.map((r) => (
-        <article key={r.id} className="reg-item">
-          <header className="reg-head">
+        <article key={r.id} className={`sn-reg-item rel-${r.relevance.toLowerCase()}`}>
+          <header className="sn-reg-head">
             <h4>{r.framework}</h4>
-            <span className={`reg-badge ${r.relevance === 'YES' ? 'yes' : 'pot'}`}>{r.relevance}</span>
+            <span className="sn-reg-badge">
+              {r.relevance === 'YES' ? 'SUPPORTED NOW' : r.relevance === 'ADVISORY' ? 'ADVISORY' : 'POSSIBLE'}
+            </span>
           </header>
-          <p className="reg-condition">{r.condition}</p>
-          <div className="reg-cols">
+          <p className="sn-reg-cond">{r.condition}</p>
+          <div className="sn-reg-cols">
             <div>
-              <span className="reg-col-lbl">Supporting evidence</span>
-              {r.supporting.map((s) => <div key={s} className="status-icon-ok">✓ {s}</div>)}
+              <span className="sn-reg-col mono">HAVE</span>
+              {r.supporting.map((s) => <div key={s} className="sn-reg-line ok">✓ {s}</div>)}
             </div>
             <div>
-              <span className="reg-col-lbl">Missing evidence</span>
-              {r.missing.map((m) => <div key={m} className="status-icon-warn">⚠ {m}</div>)}
+              <span className="sn-reg-col mono">NEED</span>
+              {r.missing.map((m) => <div key={m} className="sn-reg-line warn">! {m}</div>)}
             </div>
           </div>
-          <p className="reg-action">Recommended action · {r.action}</p>
+          <p className="sn-reg-act">
+            <span className="mono">NEXT ACTION</span> {r.action}
+          </p>
         </article>
       ))}
-    </section>
+    </div>
   )
 }

@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { FEATURE_LABELS, featurePct } from '../utils/caseAnalytics'
+import { Bar } from './ui'
+import { Term } from './Glossary'
 
 const REASONS = [
-  { key: 'origin_mass', text: 'Present inside probable origin region' },
-  { key: 'deep_hour_mass', text: 'Present during probable release window' },
-  { key: 'cpa_km', text: 'Historical track compatible with origin' },
-  { key: 'dump_profile', text: 'Vessel trajectory consistent with drift' },
-  { key: 'gap_overlap_h', text: 'AIS history available for analysis' },
-  { key: 'late_arrival', text: 'No temporal exclusion detected', pass: true },
+  { key: 'origin_mass', text: 'Was inside the probable origin area', plain: 'the drift model puts the release here and this ship was here' },
+  { key: 'deep_hour_mass', text: 'Was inside it during the release window', plain: 'the timing matches, not just the place' },
+  { key: 'cpa_km', text: 'Track passes close to the release point', plain: 'the closest approach is small' },
+  { key: 'gap_overlap_h', text: 'Position beacon history is complete enough to test', plain: 'we can actually verify where it was' },
+  { key: 'late_arrival', text: 'Did not arrive after the spill', plain: 'it cannot be excluded on timing' },
 ]
 
 export default function ExplainAttribution({ candidate, onClose }) {
@@ -18,38 +19,55 @@ export default function ExplainAttribution({ candidate, onClose }) {
   const f = candidate.features || {}
 
   return (
-    <div className="explain-panel" role="dialog" aria-label="Attribution explanation">
-      <div className="explain-head">
-        <h3>WHY THIS VESSEL?</h3>
-        <button type="button" className="explain-close" onClick={() => { setOpen(false); onClose?.() }}>×</button>
-      </div>
-      <ul className="explain-list">
-        {REASONS.map((r) => {
+    <div className="sn-explain" role="dialog" aria-label="Why this vessel was ranked">
+      <header className="sn-explain-head">
+        <div>
+          <span className="mono sn-explain-kicker">EXPLAINING THE RANK</span>
+          <h3>Why {candidate.name}?</h3>
+        </div>
+        <button type="button" className="sn-explain-close" onClick={() => { setOpen(false); onClose?.() }} aria-label="Close">×</button>
+      </header>
+
+      <p className="sn-explain-sub">
+        Each bar is one independent test. A ship ranks high only when several point the same way —
+        a <Term k="shap">model explanation</Term>, not a verdict.
+      </p>
+
+      <ul className="sn-explain-list">
+        {REASONS.map((r, i) => {
           const val = f[r.key] ?? 0
-          const ok = r.pass ? val === 0 : val > 0.3
+          const ok = r.key === 'late_arrival' ? val === 0 : val > 0.3
           return (
-            <li key={r.key} className={ok ? 'ok' : 'fail'}>
-              <span className="status-icon">{ok ? '✓' : '○'}</span>
-              {r.text}
+            <li key={r.key} className={ok ? 'ok' : 'no'}>
+              <span className="sn-explain-mark">{ok ? '✓' : '—'}</span>
+              <div>
+                <b>{r.text}</b>
+                <span>{r.plain}</span>
+              </div>
+              <em className="mono">{r.key === 'late_arrival' ? (val === 0 ? 'CLEAR' : `${featurePct(r.key, val)}%`) : `${featurePct(r.key, val)}%`}</em>
             </li>
           )
         })}
       </ul>
-      <div className="explain-score">
-        <span className="explain-score-val">{score}%</span>
-        <span className="explain-score-lbl">ATTRIBUTION SCORE</span>
-      </div>
-      <div className="explain-decomp">
-        {Object.keys(FEATURE_LABELS).map((k) => (
-          <div key={k} className="explain-bar-row">
-            <span>{FEATURE_LABELS[k]}</span>
-            <div className="explain-bar">
-              <div style={{ width: `${featurePct(k, f[k] ?? 0)}%` }} />
-            </div>
-            <b>{k === 'late_arrival' ? (f[k] === 0 ? 'PASS' : `${featurePct(k, f[k])}%`) : `${featurePct(k, f[k] ?? 0)}%`}</b>
-          </div>
+
+      <div className="sn-explain-bars">
+        {Object.keys(FEATURE_LABELS).map((k, i) => (
+          <Bar
+            key={k}
+            label={FEATURE_LABELS[k]}
+            pct={featurePct(k, f[k] ?? 0)}
+            value={`${featurePct(k, f[k] ?? 0)}%`}
+            tone={k === 'late_arrival' && f[k] === 0 ? 'green' : 'cyan'}
+            stagger={i}
+          />
         ))}
       </div>
+
+      <footer className="sn-explain-foot">
+        <span className="sn-explain-score mono">{score}%</span>
+        <span>overall model fit · {FEATURE_LABELS.dump_profile} and {FEATURE_LABELS.cpa_km} carry most of it</span>
+        <button type="button" onClick={() => { setOpen(false); onClose?.() }}>Dismiss</button>
+      </footer>
     </div>
   )
 }

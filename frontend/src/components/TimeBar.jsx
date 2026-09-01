@@ -10,7 +10,9 @@ const SPEEDS = [
 const fmtDay = (epoch) =>
   new Date(epoch * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()
 
-export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, onSpeed, onSimTime }) {
+export default function TimeBar({ simTime, tMin, tMax, playing, speed, t0, releaseWindow, onPlay, onSpeed, onSimTime }) {
+  const span = tMax - tMin || 1
+
   const days = useMemo(() => {
     const out = []
     const d0 = new Date(tMin * 1000)
@@ -23,34 +25,77 @@ export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, o
     return out
   }, [tMin, tMax])
 
-  const pct = ((simTime - tMin) / (tMax - tMin)) * 100
+  const pct = ((simTime - tMin) / span) * 100
   const d = new Date(simTime * 1000)
   const clockStr = `${String(d.getUTCDate()).padStart(2, '0')} ${d.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()} ${d.toISOString().slice(11, 16)} UTC`
+
+  const rwBand = useMemo(() => {
+    if (!releaseWindow) return null
+    const a = Date.parse(releaseWindow[0]) / 1000
+    const b = Date.parse(releaseWindow[1]) / 1000
+    const left = ((a - tMin) / span) * 100
+    const width = ((b - a) / span) * 100
+    if (!Number.isFinite(left) || !Number.isFinite(width)) return null
+    return { left: Math.max(0, left), width: Math.min(100, Math.max(1.5, width)) }
+  }, [releaseWindow, tMin, span])
+
+  const t0Pct = t0 ? ((t0 - tMin) / span) * 100 : null
 
   return (
     <footer className="sn-timeline">
       <div className="sn-tl-left">
-        <button type="button" className="sn-tl-play" onClick={onPlay} aria-label={playing ? 'Pause' : 'Play'}>
-          {playing ? '⏸' : '▶'}
-        </button>
-        {SPEEDS.map((s) => (
-          <button key={s.v} type="button" className={`sn-tl-speed ${speed === s.v ? 'active' : ''}`} onClick={() => onSpeed(s.v)}>
-            {s.label}
+        <div className="sn-tl-caption mono">
+          <span>TIME MACHINE</span>
+          <b>AIS REPLAY · 48 H BEFORE DETECTION</b>
+        </div>
+        <div className="sn-tl-controls">
+          <button
+            type="button"
+            className="sn-tl-play"
+            onClick={onPlay}
+            aria-label={playing ? 'Pause replay' : 'Play replay'}
+            title="Play / pause the vessel replay (space)"
+          >
+            {playing ? '❙❙' : '▶'}
           </button>
-        ))}
-        <span className="sn-tl-mode"><span className="sn-dot live" /> AIS REPLAY</span>
+          <div className="sn-tl-speeds" role="group" aria-label="Playback speed">
+            {SPEEDS.map((s) => (
+              <button
+                key={s.v}
+                type="button"
+                className={`sn-tl-speed ${speed === s.v ? 'active' : ''}`}
+                onClick={() => onSpeed(s.v)}
+                title={`Replay at ${s.label} real time`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="sn-tl-track">
-        <div className="sn-tl-days">
+        <div className="sn-tl-days mono">
           {days.map((ep, i) => (
             <React.Fragment key={ep}>
-              {i > 0 && <span className="sn-tl-sep">─────</span>}
-              <span className="mono">{fmtDay(ep)}</span>
+              {i > 0 && <span className="sn-tl-sep" />}
+              <span>{fmtDay(ep)}</span>
             </React.Fragment>
           ))}
+          {rwBand && (
+            <span className="sn-tl-rw mono" style={{ left: `${rwBand.left + rwBand.width / 2}%` }}>
+              RELEASE WINDOW
+            </span>
+          )}
         </div>
+
         <div className="sn-tl-rail">
+          <div className="sn-tl-band" style={{ left: `${rwBand?.left ?? 0}%`, width: `${rwBand?.width ?? 0}%` }} />
+          {t0Pct != null && (
+            <div className={`sn-tl-t0 ${t0Pct > 96 ? 'end' : ''}`} style={{ left: `${Math.min(100, t0Pct)}%` }} title="SAR detection (T0)">
+              <span className="mono">T0</span>
+            </div>
+          )}
           <div className="sn-tl-playhead" style={{ left: `${pct}%` }}>
             <span className="mono">{clockStr}</span>
           </div>
@@ -62,23 +107,20 @@ export default function TimeBar({ simTime, tMin, tMax, playing, speed, onPlay, o
             step={60}
             value={simTime}
             onChange={(e) => onSimTime(+e.target.value)}
-            aria-label="AIS replay timeline"
+            aria-label="Replay time"
+            title="Drag to move every ship and forecast layer to this moment"
           />
         </div>
+
+        <p className="sn-tl-hint mono">DRAG — EVERY SHIP, ORIGIN CLOUD AND FORECAST FOLLOWS THIS CLOCK</p>
       </div>
 
       <div className="sn-tl-utils">
-        <button type="button" title="Bookmark" aria-label="Bookmark">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" /></svg>
+        <button type="button" onClick={() => onSimTime(t0)} title="Jump to the moment the satellite passed">
+          AT DETECTION
         </button>
-        <button type="button" title="Screenshot" aria-label="Screenshot">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
-        </button>
-        <button type="button" title="Fullscreen" aria-label="Fullscreen">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3" /></svg>
-        </button>
-        <button type="button" title="Layout" aria-label="Layout">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="18" /><rect x="14" y="3" width="7" height="8" /><rect x="14" y="13" width="7" height="8" /></svg>
+        <button type="button" onClick={() => onSimTime(tMin)} title="Rewind to the start of the AIS window">
+          RESET
         </button>
       </div>
     </footer>

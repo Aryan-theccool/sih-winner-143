@@ -4211,7 +4211,7 @@ parameters:
 [num_iterations: 220]
 [learning_rate: 0.06]
 [num_leaves: 15]
-[num_threads: 1]
+[num_threads: 6]
 [seed: 143]
 [deterministic: 0]
 [force_col_wise: 0]

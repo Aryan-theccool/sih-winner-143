@@ -1,47 +1,64 @@
 import React from 'react'
-import { caseAssessment } from '../utils/caseAnalytics'
+import { Link } from 'react-router-dom'
+import { caseAssessment, fmtUtc, primaryObject } from '../utils/caseAnalytics'
 
-export default function SagarNetHeader({ caseInfo, detection, manifest, ranking, aisLive = true }) {
+function Chip({ label, value, tone = '' }) {
+  return (
+    <div className={`sn-chip ${tone ? `tone-${tone}` : ''}`}>
+      <span className="sn-chip-lbl mono">{label}</span>
+      <span className="sn-chip-val">{value}</span>
+    </div>
+  )
+}
+
+export default function SagarNetHeader({ caseInfo, detection, manifest, ranking, aisLive = true, onHelp }) {
   const assess = caseAssessment(detection, manifest, ranking)
+  const obj = primaryObject(detection)
+  const top = ranking?.ranking?.[0]
 
   return (
     <header className="sn-header">
-      <div className="sn-brand">
-        <h1 className="sn-logo">
-          <span className="sn-logo-main">SAGAR-NET</span>
-        </h1>
+      <Link to="/" className="sn-brand" title="Back to the SAGAR-NET overview">
+        <span className="sn-brand-mark">SAGAR<b>-NET</b></span>
+        <span className="sn-brand-sub">Maritime Intelligence From Space</span>
+      </Link>
+
+      <div className="sn-hdr-case">
+        <Chip label="CASE" value={caseInfo?.case_id} />
+        <Chip label="SAR SCENE" value={fmtUtc(caseInfo?.t0_utc)} />
+        <Chip
+          label="SLICK"
+          value={obj ? `${obj.area_km2} km² · ${Math.round(obj.confidence * 100)}% oil` : '—'}
+        />
+        <Chip
+          label="TOP CANDIDATE"
+          value={top ? `${top.name} · #${top.rank || 1} of ${ranking?.n_vessels ?? '—'} screened` : '—'}
+          tone="cyan"
+        />
       </div>
 
-      <div className="sn-case">
-        <div className="sn-case-box">
-          <span className="sn-lbl">CASE</span>
-          <span className="sn-val mono">{caseInfo?.case_id}</span>
-        </div>
-        <div className="sn-case-box">
-          <span className="sn-lbl">STATUS</span>
-          <span className="sn-val sn-warn">{assess.status}</span>
-        </div>
-      </div>
-
-      <div className="sn-status">
-        <span className={`sn-ais ${aisLive ? 'live' : ''}`}>
-          <span className="sn-dot live" /> AIS LIVE
+      <div className="sn-hdr-right">
+        <span className="sn-status-pill tone-amber">
+          <span className="sn-status-dot" />
+          {assess.status}
         </span>
-        <button type="button" className="sn-icon-btn" title="Connectivity" aria-label="Connectivity">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12.55a11 11 0 0114.08 0M8.53 16.11a6 6 0 016.95 0M12 20h.01" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>
-        </button>
-        <button type="button" className="sn-icon-btn" title="Notifications" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
-        </button>
-        <button type="button" className="sn-icon-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
+        <span className={`sn-live ${aisLive ? 'live' : ''}`} title="Synthetic AIS stream, 48 h window">
+          <span className="sn-live-dot" /> AIS 48H
+        </span>
+        <button type="button" className="sn-help-btn" onClick={onHelp} title="How to read this dashboard (?)">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M9.6 9.2A2.5 2.5 0 0112 7.5c1.4 0 2.5 1 2.5 2.3 0 1.7-2.5 1.9-2.5 3.6" />
+            <path d="M12 17h.01" />
+          </svg>
+          Guide
         </button>
         <div className="sn-user">
-          <div className="sn-avatar" aria-hidden="true">A</div>
-          <div>
+          <span className="sn-avatar" aria-hidden="true">CG</span>
+          <span className="sn-user-meta">
             <span className="sn-user-role">Analyst</span>
-            <span className="sn-user-org">Coast Guard</span>
-          </div>
+            <span className="sn-user-org">Indian Coast Guard</span>
+          </span>
         </div>
       </div>
     </header>

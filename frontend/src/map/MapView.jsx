@@ -78,7 +78,7 @@ export default function MapView(props) {
         onViewStateChange={({ viewState: vs }) => setViewState(vs)}
         controller
         layers={layers}
-        style={{ background: '#0B0E14' }}
+        style={{ background: 'transparent' }}
         onClick={onClick}
       >
         {basemapOk && (

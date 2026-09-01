@@ -79,15 +79,38 @@ Each step is clickable and navigates to the relevant map/panel view — making t
 |------|---------|
 | `utils/caseAnalytics.js` | Derived metrics: slick characterisation, case assessment scores, ensemble stats |
 | `utils/terminology.js` | Scientific/legal label mappings, evidence tiers, attribution status |
+| `utils/glossary.js` | Plain-English definitions for every acronym shown in the UI (hover-to-learn strip + guide) |
+| `utils/stepGuide.js` | One question, one plain-language summary and a next-step pointer per sidebar tab |
+| `utils/mapModes.js` | Map presets plus the sentence explaining what each mode is showing |
 | `utils/shipIcon.js` | Vessel type → icon mapping for map markers |
 | `utils/vesselMotion.js` | Position interpolation and heading calculation |
 
-### 1.8 Visual Design Refresh
+### 1.8 Dashboard brought onto the landing page's design system
 
-- Complete **CSS overhaul** (`styles.css`) — dark intelligence theme with monospace accents
-- **OverviewScreen** — Dashboard cards (active spills, vessels, high-priority cases)
-- **SatelliteCards**, **SlickIntelCard** — Compact data cards for sidebar context
-- **WorkflowStrip** — Pipeline stage indicator (Detect → Backtrack → Rank → Export)
+The marketing page and the investigation view had drifted apart: the landing page
+ran on the `#030508 → #0a1018` surface ramp, cyan accents and Syne display type,
+while the dashboard kept an older green-on-`#0A0D12` theme with ~250 class names that
+had no stylesheet rule at all (unstyled candidate cards, evidence chain, regulatory
+blocks, dossier modal). `styles.css` was rewritten end to end:
+
+- **One design language** — landing tokens (`--lp-*`) are consumed directly with
+  identical fallbacks, so surfaces, cyan accent, 2 px radii, 14 px blur glass and the
+  Syne / Inter / IBM Plex Mono type ramp now match shot-for-shot.
+- **One question per screen** — the sidebar header states `STEP 0n / 05`, the question
+  it answers and the evidence tier reached; a `NEXT · STEP 0n+1` pointer closes each panel.
+- **No unexplained jargon** — SAR, look-alike, hindcast, credible region, CPA, ORB,
+  UNCLOS Art. 220(3), SHA-256 … are dotted-inline terms whose plain-English definition
+  appears in a strip pinned to the sidebar footer, plus a four-tab Reading Guide
+  (`?`) covering pipeline, map colours, confidence labels and limits.
+- **Honest data framing** — normalised model scores are labelled "model fit · 0–100",
+  release-window bars are computed from real timestamps instead of hard-coded offsets,
+  excluded vessels are shown as *ruled out*, and blind spots are labelled
+  "not assessable", never "clean".
+- **Real states** — boot screen, keyboard navigation (0–5 / space / ←→ / G / ?),
+  toasts instead of `alert()`, an actionable "API not reachable" screen, and
+  responsive rules down to phone width (the map + panel stack, the rail goes horizontal).
+- `frontend/scripts/ssr-preview.mjs` renders every panel against the live API and fails
+  if any rendered class has no CSS rule — the regression that broke the dashboard before.
 
 ---
 
@@ -213,13 +236,13 @@ cd frontend && npm install && npm run build && cd ..
 # Open http://localhost:8000
 ```
 
-**Demo walkthrough:**
-1. Click through the **Case Story Flow** steps at the top
-2. Toggle layers in the **Map Chrome** panel (SAR, oil, ships, backtrack, gaps)
-3. Use the **Time Bar** to scrub AIS replay or animate backward drift
-4. Navigate to **Vessels** panel to see top-3 ranked suspects with SHAP features
-5. Open **Evidence** panel to view the UNCLOS evidentiary ladder
-6. Click **Dossier** in the left rail to generate the evidence PDF
+**Demo walkthrough** (the dashboard is the same five beats as the landing page):
+1. Land on **00 Overview** — four numbers, the five steps, and the map-mode explainer
+2. **01 Detection** — oil probability, size, age band, and what the radar could not see
+3. **02 Origin** — scrub the backward hindcast (T−0 h → T−24 h) and read the p10/p50/p90 cloud
+4. **03 Vessels** — top-3 candidates with per-factor bars, SHAP explanation and AIS-gap anomaly
+5. **04 Evidence** — checklist, clickable provenance chain, what is still missing, regulatory floor
+6. **05 Report** — generate and download the hash-verified dossier
 
 ---
 
