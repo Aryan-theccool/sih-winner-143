@@ -1,110 +1,151 @@
 import {
-  BitmapLayer, PathLayer, PolygonLayer, ScatterplotLayer,
+  BitmapLayer, PathLayer, PolygonLayer, ScatterplotLayer, IconLayer,
 } from '@deck.gl/layers'
 import { TripsLayer } from '@deck.gl/geo-layers'
 import { PathStyleExtension } from '@deck.gl/extensions'
 import { posAt } from '../api.js'
+import { vesselAt, speedVectorEnd, vesselTypeColor } from '../utils/vesselMotion.js'
+import { getShipIconAtlas } from '../utils/shipIcon.js'
 
-export const CLASS_COLORS = {
-  oil_confirmed: [255, 71, 87],
-  look_alike: [255, 176, 32],
-  ambiguous: [150, 160, 175],
+const CLASS_COLORS = {
+  oil_confirmed: [220, 38, 55],
+  look_alike: [245, 158, 11],
+  ambiguous: [148, 163, 184],
 }
-export const SUSPECT_COLORS = [
-  [255, 71, 87], [255, 176, 32], [46, 213, 255],
-]
-const SHIP_GREY = [139, 155, 180]
-const CLOUD_RGB = [255, 96, 72]
-
-const LEVEL_OPACITY = { p90: 26, p50: 62, p10: 120 }
+const SUSPECT_COLORS = [[220, 38, 55], [245, 158, 11], [34, 211, 238]]
+const CLOUD_HEAT = {
+  p90: [139, 92, 246, 35],
+  p50: [236, 72, 153, 85],
+  p10: [251, 146, 60, 140],
+}
+const CLOUD_LINE = {
+  p90: [139, 92, 246, 100],
+  p50: [236, 72, 153, 230],
+  p10: [251, 146, 60, 180],
+}
 
 function featToPolygonList(fc) {
   const out = []
   for (const f of fc.features) {
     const g = f.geometry
     const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates
-    for (const poly of polys) {
-      out.push({ polygon: poly, props: f.properties })
+    for (const poly of polys) out.push({ polygon: poly, props: f.properties })
+  }
+  return out
+}
+
+function envGrid(aoi, kind) {
+  if (!aoi) return []
+  const out = []
+  const latStep = (aoi.lat_max - aoi.lat_min) / 5
+  const lonStep = (aoi.lon_max - aoi.lon_min) / 7
+  const angle = kind === 'wind' ? 225 : kind === 'waves' ? 200 : 145
+  const len = kind === 'wind' ? 0.06 : 0.04
+  for (let lat = aoi.lat_min + latStep / 2; lat < aoi.lat_max; lat += latStep) {
+    for (let lon = aoi.lon_min + lonStep / 2; lon < aoi.lon_max; lon += lonStep) {
+      const rad = (angle * Math.PI) / 180
+      out.push({ from: [lon, lat], to: [lon + Math.sin(rad) * len, lat + Math.cos(rad) * len], kind })
     }
   }
   return out
 }
 
+function particleTrajectories(backtrack, driftHour, n = 40) {
+  const ct = backtrack?.features?.find((f) => f.properties?.kind === 'centroid_track')
+  if (!ct) return []
+  const coords = ct.geometry.coordinates.slice(0, Math.max(2, driftHour + 1))
+  const trails = []
+  for (let i = 0; i < n; i++) {
+    const off = (i / n - 0.5) * 0.04
+    trails.push(coords.map(([lon, lat], j) => [lon + off * (j / coords.length), lat + off * 0.5]))
+  }
+  return trails
+}
+
 export function buildLayers({
   caseInfo, detection, backtrack, forecast, manifest,
   vessels, ranking, simTime, driftHour, pulse,
-  show, tMin, selectedMmsi, hoverInfo,
+  show, tMin, selectedMmsi, hoverInfo, originMode, flowMode,
 }) {
   const layers = []
   if (!caseInfo) return layers
 
-  // ---- 1. SAR scene bitmap ----
   if (show.sar && caseInfo.scene) {
     const b = caseInfo.scene.bounds
     layers.push(new BitmapLayer({
-      id: 'sar',
-      image: '/api/scene.png',
+      id: 'sar', image: '/api/scene.png',
       bounds: [b.lon_min, b.lat_min, b.lon_max, b.lat_max],
-      opacity: 0.5,
-      desaturate: 0.4,
-      tintColor: [200, 220, 255],
-      pickable: false,
+      opacity: show.oil ? 0.35 : 0.5, pickable: false,
     }))
   }
 
-  // ---- 2. land mass (offline context, no internet needed) ----
-  const landFeat = caseInfo.coastline.features.find((f) => f.properties.kind === 'land')
-  layers.push(new PolygonLayer({
-    id: 'land',
-    data: [landFeat.geometry.coordinates],
-    getPolygon: (d) => d,
-    getFillColor: [22, 32, 43, 230],
-    getLineColor: [52, 75, 99, 255],
-    getLineWidth: 1.5,
-    lineWidthUnits: 'pixels',
-    pickable: false,
+  const coastFeat = caseInfo.coastline.features.find((f) => f.properties.kind === 'coastline')
+  layers.push(new PathLayer({
+    id: 'coastline', data: [coastFeat], getPath: (d) => d.geometry.coordinates,
+    getColor: [255, 255, 255, 160], getWidth: 1.5, widthUnits: 'pixels', pickable: false,
   }))
 
-  // ---- 3. wind detectability mask ----
+  if (show.current) {
+    const grid = envGrid(caseInfo.aoi, 'current')
+    layers.push(new PathLayer({
+      id: 'current-vectors', data: grid, getPath: (d) => [d.from, d.to],
+      getColor: [34, 211, 238, 180], getWidth: 2, widthUnits: 'pixels', pickable: false,
+    }))
+  }
+  if (show.wind) {
+    const grid = envGrid(caseInfo.aoi, 'wind')
+    layers.push(new PathLayer({
+      id: 'wind-vectors', data: grid, getPath: (d) => [d.from, d.to],
+      getColor: [147, 197, 253, 200], getWidth: 2, widthUnits: 'pixels', pickable: false,
+    }))
+  }
+  if (show.waves) {
+    const grid = envGrid(caseInfo.aoi, 'waves')
+    layers.push(new PathLayer({
+      id: 'wave-vectors', data: grid, getPath: (d) => [d.from, d.to],
+      getColor: [96, 165, 250, 120], getWidth: 1.5, widthUnits: 'pixels', pickable: false,
+    }))
+  }
+
   if (show.mask && detection) {
     layers.push(new PolygonLayer({
-      id: 'mask',
-      data: featToPolygonList(detection.detectability),
+      id: 'mask', data: featToPolygonList(detection.detectability),
       getPolygon: (d) => d.polygon[0],
-      getFillColor: [156, 163, 175, 36],
-      getLineColor: [156, 163, 175, 110],
-      getLineWidth: 1,
-      lineWidthUnits: 'pixels',
-      stroked: true,
-      filled: true,
-      pickable: true,
+      getFillColor: [100, 116, 139, 55], getLineColor: [148, 163, 184, 150],
+      getLineWidth: 1, lineWidthUnits: 'pixels', stroked: true, filled: true, pickable: true,
       getTooltip: () => 'Low detectability: wind outside 3–12 m/s',
     }))
   }
 
-  // ---- 4. slick polygons ----
-  if (detection) {
+  if (show.oil && detection) {
     layers.push(new PolygonLayer({
-      id: 'slicks',
-      data: featToPolygonList(detection.slick),
+      id: 'slicks', data: featToPolygonList(detection.slick),
       getPolygon: (d) => d.polygon[0],
-      getFillColor: (d) => [...CLASS_COLORS[d.props.class] || CLASS_COLORS.ambiguous, 64],
-      getLineColor: (d) => [...CLASS_COLORS[d.props.class] || CLASS_COLORS.ambiguous, 255],
-      getLineWidth: 2,
-      lineWidthUnits: 'pixels',
-      stroked: true,
-      filled: true,
-      pickable: true,
+      getFillColor: (d) => {
+        const c = CLASS_COLORS[d.props.class] || CLASS_COLORS.ambiguous
+        const a = d.props.class === 'oil_confirmed' ? 90 : 50
+        return [...c, a]
+      },
+      getLineColor: (d) => [...(CLASS_COLORS[d.props.class] || CLASS_COLORS.ambiguous), 255],
+      getLineWidth: 2.5, lineWidthUnits: 'pixels', stroked: true, filled: true, pickable: true,
       getTooltip: ({ object }) => object &&
-        `${object.props.object_id} · ${object.props.class}\n` +
-        `${object.props.area_km2} km² · conf ${object.props.confidence} · wind ${object.props.wind_ms} m/s`,
+        `${object.props.object_id}\nOil-slick probability ${Math.round(object.props.confidence * 100)}%\n${object.props.area_km2} km²`,
     }))
+    const obj = detection.summary?.objects?.find((o) => o.class === 'oil_confirmed')
+    if (obj?.centroid) {
+      layers.push(new ScatterplotLayer({
+        id: 'slick-centroid', data: [obj.centroid], getPosition: (d) => d,
+        getRadius: 400, radiusUnits: 'meters',
+        getFillColor: [220, 38, 55, 80], getLineColor: [255, 255, 255, 220],
+        getLineWidth: 2, lineWidthUnits: 'pixels', stroked: true, pickable: false,
+      }))
+    }
   }
 
-  // ---- 5. origin cloud at the selected look-back hour ----
   if (backtrack && show.backtrack) {
     const feats = backtrack.features.filter(
-      (f) => f.properties.t_hours === -driftHour && LEVEL_OPACITY[f.properties.level])
+      (f) => f.properties.t_hours === -driftHour && CLOUD_HEAT[f.properties.level],
+    )
     const order = { p90: 0, p50: 1, p10: 2 }
     feats.sort((a, b) => order[a.properties.level] - order[b.properties.level])
     const cloudPolys = feats.flatMap((f) => {
@@ -113,188 +154,158 @@ export function buildLayers({
       return polys.map((p) => ({ polygon: p[0], level: f.properties.level }))
     })
     layers.push(new PolygonLayer({
-      id: 'origin-cloud',
-      data: cloudPolys,
-      getPolygon: (d) => d.polygon,
-      getFillColor: (d) => [...CLOUD_RGB, LEVEL_OPACITY[d.level]],
-      getLineColor: (d) => [...CLOUD_RGB, d.level === 'p50' ? 220 : 90],
-      getLineWidth: (d) => (d.level === 'p50' ? 2 : 1),
-      lineWidthUnits: 'pixels',
-      stroked: true,
-      filled: true,
-      pickable: false,
+      id: 'origin-cloud', data: cloudPolys, getPolygon: (d) => d.polygon,
+      getFillColor: (d) => CLOUD_HEAT[d.level], getLineColor: (d) => CLOUD_LINE[d.level],
+      getLineWidth: (d) => (d.level === 'p50' ? 2.5 : 1), lineWidthUnits: 'pixels',
+      stroked: true, filled: true, pickable: false,
     }))
-    // centroid track of the cloud
-    const ct = backtrack.features.find((f) => f.properties.kind === 'centroid_track')
-    if (ct) {
+
+    if (originMode) {
+      const trails = particleTrajectories(backtrack, driftHour, 120)
       layers.push(new PathLayer({
-        id: 'cloud-track',
-        data: [ct],
-        getPath: (d) => d.geometry.coordinates,
-        getColor: [255, 255, 255, 150],
-        getWidth: 2,
-        widthUnits: 'pixels',
-        pickable: false,
-      }))
-      const c = ct.geometry.coordinates[Math.min(driftHour, ct.geometry.coordinates.length - 1)]
-      layers.push(new ScatterplotLayer({
-        id: 'cloud-centroid',
-        data: [c],
-        getPosition: (d) => d,
-        getRadius: 900,
-        radiusUnits: 'meters',
-        getFillColor: [255, 255, 255, 40],
-        getLineColor: [255, 255, 255, 200],
-        lineWidthUnits: 'pixels',
-        getLineWidth: 1.5,
-        stroked: true,
-        pickable: false,
+        id: 'particle-ensemble', data: trails, getPath: (d) => d,
+        getColor: [139, 92, 246, 40], getWidth: 1, widthUnits: 'pixels', pickable: false,
       }))
     }
-    // estimated origin star
+
+    const ct = backtrack.features.find((f) => f.properties.kind === 'centroid_track')
+    if (ct) {
+      const slice = ct.geometry.coordinates.slice(0, Math.max(2, driftHour + 1))
+      layers.push(new PathLayer({
+        id: 'cloud-track', data: [slice], getPath: (d) => d,
+        getColor: [34, 211, 238, 220], getWidth: 3, widthUnits: 'pixels', pickable: false,
+      }))
+      const arrows = []
+      for (let i = 1; i < slice.length; i += 2) arrows.push({ from: slice[i], to: slice[i - 1] })
+      if (arrows.length) {
+        layers.push(new PathLayer({
+          id: 'drift-arrows', data: arrows, getPath: (d) => [d.from, d.to],
+          getColor: [34, 211, 238, 200], getWidth: 2, widthUnits: 'pixels', pickable: false,
+        }))
+      }
+    }
+
     if (manifest) {
       const oe = manifest.origin_estimate
       layers.push(new ScatterplotLayer({
-        id: 'origin-star',
-        data: [[oe.lon, oe.lat]],
-        getPosition: (d) => d,
-        getRadius: 2600 + 900 * Math.sin(pulse / 2.2),
-        radiusUnits: 'meters',
-        getFillColor: [255, 176, 32, 30],
-        getLineColor: [255, 176, 32, 255],
-        lineWidthUnits: 'pixels',
-        getLineWidth: 2,
-        stroked: true,
-        pickable: true,
-        getTooltip: () => `Estimated origin ${oe.lon}E ${oe.lat}N\n` +
-          `release window ${oe.estimated_release_window_utc[0].slice(11, 16)}–` +
-          `${oe.estimated_release_window_utc[1].slice(11, 16)}Z`,
+        id: 'origin-star', data: [[oe.lon, oe.lat]], getPosition: (d) => d,
+        getRadius: 2800 + 800 * Math.sin(pulse / 2.2), radiusUnits: 'meters',
+        getFillColor: [251, 191, 36, 30], getLineColor: [251, 191, 36, 255],
+        getLineWidth: 2, lineWidthUnits: 'pixels', stroked: true, pickable: true,
+        getTooltip: () => `Probable release origin\n${oe.lon}°E ${oe.lat}°N`,
       }))
     }
   }
 
-  // ---- 6. forward forecast cloud (p50 at +6h and +12h) ----
-  if (forecast && show.forecast) {
-    const feats = forecast.features.filter(
-      (f) => (f.properties.t_hours === 6 || f.properties.t_hours === 12)
-        && f.properties.level === 'p50')
+  if (forecast && (show.flow || flowMode)) {
+    const feats = forecast.features.filter((f) => f.properties.level === 'p50')
     const polys = feats.flatMap((f) => {
       const g = f.geometry
       const ps = g.type === 'Polygon' ? [g.coordinates] : g.coordinates
       return ps.map((p) => ({ polygon: p[0], t: f.properties.t_hours }))
     })
     layers.push(new PolygonLayer({
-      id: 'forecast',
-      data: polys,
-      getPolygon: (d) => d.polygon,
-      getFillColor: (d) => [46, 213, 255, d.t === 6 ? 40 : 24],
-      getLineColor: [46, 213, 255, 160],
-      getLineWidth: 1.5,
-      lineWidthUnits: 'pixels',
-      stroked: true,
-      pickable: true,
-      getTooltip: ({ object }) => object && `forecast drift cloud +${object.t}h (p50)`,
+      id: 'flow-forecast', data: polys, getPolygon: (d) => d.polygon,
+      getFillColor: (d) => [34, 211, 238, 30 + 15 * Math.sin(pulse / 3 + d.t)],
+      getLineColor: [34, 211, 238, 140], getLineWidth: 1.5, lineWidthUnits: 'pixels',
+      stroked: true, pickable: false,
     }))
   }
 
-  // ---- 7. vessels: animated trips ----
   if (vessels && show.ships) {
-    const rel = vessels.map((v) => v)
     const rankOf = {}
     if (ranking) ranking.ranking.slice(0, 3).forEach((r, i) => { rankOf[r.mmsi] = i })
-    layers.push(new TripsLayer({
-      id: 'trips',
-      data: rel,
-      getPath: (d) => d.path,
-      getTimestamps: (d) => d.timestamps,
-      getColor: (d) => (rankOf[d.mmsi] !== undefined ? SUSPECT_COLORS[rankOf[d.mmsi]] : SHIP_GREY),
-      currentTime: simTime - tMin,
-      trailLength: 5 * 3600,
-      capRounded: true,
-      jointRounded: true,
-      fadeTrail: true,
-      opacity: 0.85,
-      widthMinPixels: 3,
-      getWidth: (d) => (rankOf[d.mmsi] !== undefined ? 4 : 2.5),
-    }))
-    // dark (AIS-gap) segments as dashed paths
-    const dashes = rel.flatMap((v) => (v.dark_segments || [])
-      .filter((s) => s.length >= 2)
-      .map((s) => ({ coords: s.map((p) => [p[0], p[1]]), mmsi: v.mmsi })))
+    const { atlas, mapping } = getShipIconAtlas()
+
+    if (show.tracks !== false) {
+      layers.push(new TripsLayer({
+        id: 'trips', data: vessels, getPath: (d) => d.path, getTimestamps: (d) => d.timestamps,
+        getColor: (d) => {
+          const i = rankOf[d.mmsi]
+          if (i !== undefined) return [...SUSPECT_COLORS[i], 200]
+          return [...vesselTypeColor(d.type), 140]
+        },
+        currentTime: simTime - tMin, trailLength: 4 * 3600,
+        capRounded: true, jointRounded: true, fadeTrail: true, opacity: 0.8,
+        widthMinPixels: 2, getWidth: (d) => (rankOf[d.mmsi] !== undefined ? 3.5 : 2),
+      }))
+    }
+
+    if (show.gaps) {
+      const dashes = vessels.flatMap((v) => (v.dark_segments || [])
+        .filter((s) => s.length >= 2)
+        .map((s) => ({ coords: s.map((p) => [p[0], p[1]]), mmsi: v.mmsi })))
+      layers.push(new PathLayer({
+        id: 'ais-gaps', data: dashes, getPath: (d) => d.coords,
+        getColor: (d) => {
+          const i = rankOf[d.mmsi]
+          return i !== undefined ? [...SUSPECT_COLORS[i], 220] : [245, 158, 11, 180]
+        },
+        getWidth: 2.5, widthUnits: 'pixels', getDashArray: [6, 4], dashJustified: true,
+        extensions: [new PathStyleExtension({ dash: true })], pickable: false,
+      }))
+    }
+
+    const heads = []
+    const vectors = []
+    for (const v of vessels) {
+      const st = vesselAt(v, simTime)
+      if (!st) continue
+      heads.push({ ...v, ...st })
+      vectors.push({ from: st.position, to: speedVectorEnd(...st.position, st.heading, st.speed) })
+    }
+
     layers.push(new PathLayer({
-      id: 'dark-gaps',
-      data: dashes,
-      getPath: (d) => d.coords,
-      getColor: (d) => {
-        const i = rankOf[d.mmsi]
-        return i !== undefined ? [...SUSPECT_COLORS[i], 235] : [255, 176, 32, 200]
-      },
-      getWidth: (d) => (rankOf[d.mmsi] !== undefined ? 3.5 : 2.5),
-      widthUnits: 'pixels',
-      getDashArray: [8, 4],
-      dashJustified: true,
-      extensions: [new PathStyleExtension({ dash: true })],
-      pickable: false,
+      id: 'speed-vectors', data: vectors, getPath: (d) => [d.from, d.to],
+      getColor: [200, 220, 240, 160], getWidth: 2, widthUnits: 'pixels', pickable: false,
     }))
 
-    // instantaneous dots + pulsing suspect rings
-    const heads = []
-    for (const v of rel) {
-      const p = posAt(v, simTime)
-      if (p) heads.push({ ...v, position: p })
-    }
-    layers.push(new ScatterplotLayer({
-      id: 'heads',
-      data: heads,
+    layers.push(new IconLayer({
+      id: 'ship-icons', data: heads, pickable: true,
+      iconAtlas: atlas, iconMapping: mapping,
+      getIcon: () => 'ship',
       getPosition: (d) => d.position,
-      getRadius: (d) => (rankOf[d.mmsi] !== undefined ? 420 : 300),
-      radiusUnits: 'meters',
-      getFillColor: (d) => {
+      getSize: (d) => Math.min(28, 12 + (d.length_m || 100) / 15),
+      getAngle: (d) => -d.heading,
+      getColor: (d) => {
         const i = rankOf[d.mmsi]
-        return i !== undefined ? [...SUSPECT_COLORS[i], 255] : [199, 210, 223, 235]
+        if (i !== undefined) return [...SUSPECT_COLORS[i], 255]
+        return [...vesselTypeColor(d.type), 255]
       },
-      getLineColor: [5, 11, 20, 255],
-      getLineWidth: 1,
-      lineWidthUnits: 'pixels',
-      stroked: true,
-      pickable: true,
-      onClick: hoverInfo.onClickVessel,
-      getTooltip: ({ object }) => object &&
-        `${object.name} (${object.mmsi})\n${object.type} · ${object.flag}`,
+      onClick: hoverInfo?.onClickVessel,
+      getTooltip: ({ object }) => {
+        if (!object) return null
+        const rank = rankOf[object.mmsi]
+        const rankLine = rank !== undefined ? `\nAttribution rank: #${rank + 1}` : ''
+        return `${object.name} (${object.mmsi})\n${object.type} · ${object.speed.toFixed(1)} kn · ${Math.round(object.heading)}°${rankLine}\n${object.inGap ? 'AIS GAP / UNOBSERVED' : 'AIS active'}`
+      },
     }))
-    layers.push(new ScatterplotLayer({
-      id: 'suspect-pulse',
-      data: heads.filter((d) => rankOf[d.mmsi] !== undefined),
-      getPosition: (d) => d.position,
-      getRadius: 1600 + 900 * (0.5 + 0.5 * Math.sin(pulse / 2.2)),
-      radiusUnits: 'meters',
-      radiusMinPixels: 8,
-      getFillColor: [0, 0, 0, 0],
-      getLineColor: (d) => [...SUSPECT_COLORS[rankOf[d.mmsi]], 170],
-      getLineWidth: 2,
-      lineWidthUnits: 'pixels',
-      stroked: true,
-      pickable: false,
-    }))
-    // selection highlight
+
     if (selectedMmsi) {
       const sel = heads.find((d) => d.mmsi === selectedMmsi)
       if (sel) {
         layers.push(new ScatterplotLayer({
-          id: 'sel-ring',
-          data: [sel],
-          getPosition: (d) => d.position,
-          getRadius: 2600,
-          radiusUnits: 'meters',
-          getFillColor: [0, 0, 0, 0],
-          getLineColor: [255, 255, 255, 220],
-          getLineWidth: 1.5,
-          lineWidthUnits: 'pixels',
-          stroked: true,
-          pickable: false,
+          id: 'sel-ring', data: [sel], getPosition: (d) => d.position,
+          getRadius: 2400, radiusUnits: 'meters',
+          getFillColor: [0, 0, 0, 0], getLineColor: [255, 255, 255, 230],
+          getLineWidth: 2, lineWidthUnits: 'pixels', stroked: true, pickable: false,
         }))
       }
     }
+
+    // PRD F3: top-3 suspects get pulsing highlight rings
+    layers.push(new ScatterplotLayer({
+      id: 'suspect-pulse',
+      data: heads.filter((d) => rankOf[d.mmsi] !== undefined),
+      getPosition: (d) => d.position,
+      getRadius: 1800 + 900 * (0.5 + 0.5 * Math.sin(pulse / 2.2)),
+      radiusUnits: 'meters',
+      radiusMinPixels: 10,
+      getFillColor: [0, 0, 0, 0],
+      getLineColor: (d) => [...SUSPECT_COLORS[rankOf[d.mmsi]], 200],
+      getLineWidth: 2.5, lineWidthUnits: 'pixels', stroked: true, pickable: false,
+    }))
   }
+
   return layers
 }

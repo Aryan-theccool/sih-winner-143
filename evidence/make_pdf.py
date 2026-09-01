@@ -141,6 +141,14 @@ def build():
                  Paragraph(f"<font face='Courier' size=6.6><b>{pkg}</b></font>", st_sm)])
     _table(story, rows, widths=[50, 130])
     story.append(Spacer(1, 6))
+    story.append(Paragraph("5 · Electronic Evidence — Bharatiya Sakshya Adhiniyam 2023 §63", st_h2))
+    story.append(Paragraph(
+        "This package is structured for admissibility under <b>BSA 2023 §63</b> (electronic "
+        "records): each artifact is identified by SHA-256 digest, generation timestamp, and "
+        "processing chain. The PACKAGE ID above is the composite seal. Operational deployment "
+        "would attach a qualified digital-signature certificate; this demo supplies the "
+        "certificate <i>template</i> and hash chain only.", st_b))
+    story.append(Spacer(1, 6))
     story.append(HRFlowable(width="100%", color=INK, thickness=0.7))
     story.append(Paragraph(
         "Synthetic demo case — generated scene/AIS/met-ocean stand-ins per the "

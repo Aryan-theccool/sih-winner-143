@@ -97,12 +97,14 @@ def vessels():
         g = g.sort_values("timestamp")
         t = g.timestamp.map(lambda x: x.timestamp()).values
         lon, lat = g.lon.values, g.lat.values
+        sog, cog = g.sog.values, g.cog.values
         path, ghosts, in_dark = [], [], False
         for i in range(len(g)):
             if i and t[i] - t[i - 1] > 1800:          # dark interval begins
                 in_dark = True
                 ghosts.append([[round(float(lon[i - 1]), 5), round(float(lat[i - 1]), 5), int(t[i - 1])]])
-            path.append([round(float(lon[i]), 5), round(float(lat[i]), 5), int(t[i])])
+            path.append([round(float(lon[i]), 5), round(float(lat[i]), 5), int(t[i]),
+                         round(float(sog[i]), 1), round(float(cog[i]), 1)])
             if in_dark:
                 ghosts[-1].append(path[-1])
             if in_dark and i + 1 < len(g) and t[i + 1] - t[i] <= 1800:
@@ -112,6 +114,7 @@ def vessels():
                     "type": meta.get(mmsi, {}).get("type", "?"),
                     "flag": meta.get(mmsi, {}).get("flag", "?"),
                     "length_m": meta.get(mmsi, {}).get("length_m"),
+                    "ais_gaps": meta.get(mmsi, {}).get("ais_gaps", []),
                     "path": path,
                     "dark_segments": ghosts})
     return {"t_min": int(df.timestamp.min().timestamp()),
