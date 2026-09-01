@@ -3,65 +3,75 @@ import DeckGL from '@deck.gl/react'
 import { Map as MapLibre } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { buildLayers } from './layers'
+import MapChrome from '../components/MapChrome'
 
-const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+const BASEMAP = {
+  version: 8,
+  sources: {
+    satellite: {
+      type: 'raster',
+      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      tileSize: 256,
+    },
+  },
+  layers: [{ id: 'satellite', type: 'raster', source: 'satellite', minzoom: 0, maxzoom: 22 }],
+}
 
 export default function MapView(props) {
-  const [basemapOk, setBasemapOk] = useState(true)
-  const [popup, setPopup] = useState(null)
+  const {
+    caseInfo, show, setShow, originMode, setOriginMode, flowMode, setFlowMode,
+    onTraceBackward, onFlowForward, onSelectVessel, onSelectSlick,
+    selectedMmsi, mapFocus,
+  } = props
 
-  const onClickVessel = useCallback((info) => {
-    if (info.object) {
-      setPopup({ x: info.x, y: info.y, vessel: info.object })
+  const [basemapOk, setBasemapOk] = useState(true)
+
+  const onClick = useCallback((info) => {
+    if (info.layer?.id === 'ship-icons' && info.object) {
       props.onSelectVessel?.(info.object.mmsi)
-    } else {
-      setPopup(null)
+    } else if (info.layer?.id === 'slicks') {
+      props.onSelectSlick?.()
+    } else if (!info.object) {
       props.onSelectVessel?.(null)
     }
   }, [props])
 
   const layers = useMemo(
-    () => buildLayers({ ...props, hoverInfo: { onClickVessel } }),
+    () => buildLayers({ ...props, hoverInfo: { onClickVessel: onClick } }),
     [props.caseInfo, props.detection, props.backtrack, props.forecast,
      props.manifest, props.vessels, props.ranking, props.simTime,
-     props.driftHour, props.pulse, props.show, props.tMin, props.selectedMmsi],
+     props.driftHour, props.pulse, props.show, props.tMin, props.selectedMmsi,
+     props.originMode, props.flowMode],
   )
 
+  const coords = caseInfo?.aoi
+    ? `${((caseInfo.aoi.lat_min + caseInfo.aoi.lat_max) / 2).toFixed(2)}°N · ${((caseInfo.aoi.lon_min + caseInfo.aoi.lon_max) / 2).toFixed(2)}°E`
+    : null
+
   return (
-    <div className="mapwrap">
+    <div className="map-stage">
       <DeckGL
-        initialViewState={{ longitude: 75.9, latitude: 9.35, zoom: 7.7, pitch: 0, bearing: 0 }}
-        controller={true}
+        initialViewState={{ longitude: 75.85, latitude: 9.35, zoom: 8.1, pitch: 0, bearing: 0 }}
+        controller
         layers={layers}
-        style={{ background: '#050b14' }}
-        onClick={(info) => !info.object && setPopup(null)}
+        style={{ background: '#060a10' }}
+        onClick={onClick}
       >
         {basemapOk && (
-          <MapLibre
-            mapStyle={BASEMAP}
-            attributionControl={false}
-            onError={() => setBasemapOk(false)}
-          />
+          <MapLibre mapStyle={BASEMAP} attributionControl={false} onError={() => setBasemapOk(false)} />
         )}
       </DeckGL>
 
-      <div className="legend">
-        <div className="li"><span className="sw" style={{ background: 'rgba(255,71,87,.5)', border: '1px solid #ff4757' }} /> oil confirmed</div>
-        <div className="li"><span className="sw" style={{ background: 'rgba(255,176,32,.4)', border: '1px solid #ffb020' }} /> look-alike</div>
-        <div className="li"><span className="sw" style={{ background: 'rgba(255,96,72,.35)' }} /> origin cloud</div>
-        <div className="li"><span className="sw" style={{ border: '1px dashed #ffb020' }} /> AIS dark interval</div>
-        <div className="li"><span className="sw" style={{ background: 'rgba(156,163,175,.3)' }} /> low-detectability (wind)</div>
-      </div>
+      <MapChrome
+        show={show} setShow={setShow}
+        originMode={originMode} setOriginMode={setOriginMode}
+        flowMode={flowMode} setFlowMode={setFlowMode}
+        onTraceBackward={onTraceBackward}
+        onFlowForward={onFlowForward}
+        caseInfo={caseInfo}
+        coords={coords}
+      />
 
-      {popup && (
-        <div className="vpopup" style={{ left: popup.x + 14, top: popup.y - 10 }}>
-          <div className="t">{popup.vessel.name}</div>
-          <div className="kv"><span>MMSI</span><b>{popup.vessel.mmsi}</b></div>
-          <div className="kv"><span>type</span><b>{popup.vessel.type}</b></div>
-          <div className="kv"><span>flag</span><b>{popup.vessel.flag}</b></div>
-          <div className="kv"><span>length</span><b>{popup.vessel.length_m} m</b></div>
-        </div>
-      )}
     </div>
   )
 }

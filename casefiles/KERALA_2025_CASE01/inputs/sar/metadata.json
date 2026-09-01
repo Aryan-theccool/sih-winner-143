@@ -17,5 +17,7 @@
     "ny": 400
   },
   "resolution_m": 500,
+  "incidence_angle_deg": 34.2,
+  "wind_direction_deg": 225,
   "preview_png": "scene_preview.png"
 }
