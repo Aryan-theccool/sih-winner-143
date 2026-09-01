@@ -1,4 +1,4 @@
-# 🌊 OriginTrace — AI-Powered Oil Spill Attribution System
+# 🌊 SagarNet — AI-Powered Oil Spill Attribution System
 **SIH-26143 (PS 26143)** | Smart India Hackathon 2025
 
 > **SAR Detection** → **Backward Drift Tracking** → **Vessel Ranking** → **UNCLOS-Grade Evidence**
