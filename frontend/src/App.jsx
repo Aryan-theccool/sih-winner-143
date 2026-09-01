@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import LeftRail from './components/LeftRail'
-import TopStatusBar from './components/TopStatusBar'
+import SagarNetHeader from './components/SagarNetHeader'
 import IntelligenceSidebar from './components/IntelligenceSidebar'
 import MapView from './map/MapView'
-import CaseStoryFlow from './components/CaseStoryFlow'
 import TimeBar from './components/TimeBar'
 import DossierModal from './components/DossierModal'
 import { api, prepVessels } from './api'
+import { layersForMode, modesForMode } from './utils/mapModes'
 
 export default function App() {
   const [caseInfo, setCaseInfo] = useState(null)
@@ -18,25 +18,33 @@ export default function App() {
   const [vesselsRaw, setVesselsRaw] = useState(null)
 
   const [view, setView] = useState('map')
+  const [mapMode, setMapMode] = useState('investigation')
+  const [userMode, setUserMode] = useState('command')
+  const [reducedMotion, setReducedMotion] = useState(false)
   const [mapFocus, setMapFocus] = useState(null)
   const [simTime, setSimTime] = useState(0)
-  const [driftHour, setDriftHour] = useState(0)
-  const [playing, setPlaying] = useState(true)
+  const [driftHour, setDriftHour] = useState(12)
+  const [flowHour, setFlowHour] = useState(24)
+  const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(600)
   const [pulse, setPulse] = useState(0)
-  const [replayMode, setReplayMode] = useState(true)
+  const [flowPlaying, setFlowPlaying] = useState(false)
+  const [show, setShow] = useState(layersForMode('investigation'))
   const [originMode, setOriginMode] = useState(false)
   const [flowMode, setFlowMode] = useState(false)
-  const [backwardActive, setBackwardActive] = useState(false)
-  const [show, setShow] = useState({
-    sar: true, oil: true, tracks: true, flow: false,
-    current: false, wind: false, waves: false,
-    ships: true, backtrack: true, gaps: true, mask: false,
-  })
   const [selectedMmsi, setSelectedMmsi] = useState(null)
   const [dossierOpen, setDossierOpen] = useState(false)
-  const [storyStep, setStoryStep] = useState('case')
+  const [showExplain, setShowExplain] = useState(false)
+  const [slickProps, setSlickProps] = useState(null)
   const raf = useRef(null)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mq.matches)
+    const h = (e) => setReducedMotion(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -53,200 +61,137 @@ export default function App() {
   const t0 = useMemo(() => (caseInfo ? Date.parse(caseInfo.t0_utc) / 1000 : 0), [caseInfo])
   const vessels = useMemo(() => (vesselsRaw ? prepVessels(vesselsRaw) : null), [vesselsRaw])
 
+  const applyMapMode = useCallback((modeId) => {
+    setShow(layersForMode(modeId))
+    const modes = modesForMode(modeId)
+    setOriginMode(modes.originMode)
+    setFlowMode(modes.flowMode)
+    if (modeId === 'oil_flow') setFlowPlaying(!reducedMotion)
+    else setFlowPlaying(false)
+    if (modeId === 'vessel_replay') setPlaying(!reducedMotion)
+    if (modeId === 'origin') {
+      setOriginMode(true)
+      setDriftHour(12)
+    }
+  }, [reducedMotion])
+
+  useEffect(() => { applyMapMode(mapMode) }, [mapMode, applyMapMode])
+
+  useEffect(() => {
+    if (reducedMotion) { setPlaying(false); setFlowPlaying(false) }
+  }, [reducedMotion])
+
   useEffect(() => {
     let last = performance.now()
     const tick = (now) => {
       const dtSec = (now - last) / 1000
       last = now
-      setPulse((p) => p + dtSec * 3)
-      if (playing && vesselsRaw) {
+      if (!reducedMotion) setPulse((p) => p + dtSec * 2)
+      if (playing && vesselsRaw && !reducedMotion) {
         setSimTime((t) => {
           const nt = t + dtSec * speed
-          return backwardActive
-            ? Math.max(vesselsRaw.t_min, t - dtSec * speed)
-            : (nt > vesselsRaw.t_max ? vesselsRaw.t_min : nt)
+          return nt > vesselsRaw.t_max ? vesselsRaw.t_min : nt
         })
-        if (backwardActive) {
-          setDriftHour((h) => Math.min(24, h + (dtSec * speed) / 3600))
-        }
       }
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
-  }, [playing, speed, vesselsRaw, backwardActive])
+  }, [playing, speed, vesselsRaw, reducedMotion])
+
+  const navigate = (v) => {
+    setView(v)
+    const modeMap = { map: 'investigation', detection: 'investigation', origin: 'origin', vessels: 'vessel_replay', evidence: 'investigation', report: 'investigation' }
+    if (modeMap[v]) setMapMode(modeMap[v])
+  }
 
   const onDriftHour = (h) => {
     setDriftHour(h)
     setView('origin')
-    setOriginMode(true)
+    setMapMode('origin')
     setSimTime(t0 - h * 3600)
-  }
-
-  const onSync = () => setSimTime(t0 - driftHour * 3600)
-
-  const onTraceBackward = () => {
-    setOriginMode((o) => !o)
-    setFlowMode(false)
-    setView('origin')
-    if (!originMode) {
-      setDriftHour(12)
-      setSimTime(t0 - 12 * 3600)
-    }
-  }
-
-  const onFlowForward = () => {
-    setFlowMode((f) => !f)
-    setShow((s) => ({ ...s, flow: true }))
-  }
-
-  const onAnimate = () => {
-    setView('origin')
-    setPlaying(false)
-    setOriginMode(true)
-    let h = 0
-    const step = () => {
-      setDriftHour(h)
-      setSimTime(t0 - h * 3600)
-      h += 1
-      if (h <= 24) setTimeout(step, 1000)
-    }
-    step()
   }
 
   const onSelectVessel = (mmsi) => {
     setSelectedMmsi(mmsi)
     setMapFocus(mmsi ? 'vessel' : null)
-    if (mmsi) setView('vessels')
+    setShowExplain(false)
+    if (mmsi) { setView('vessels'); setMapMode('vessel_replay') }
   }
 
-  const onSelectSlick = () => {
+  const onSelectSlick = (props) => {
+    if (!props) { setMapFocus(null); setSlickProps(null); return }
+    setSlickProps(props)
     setMapFocus('slick')
     setView('detection')
+    setMapMode('investigation')
+    setShow((s) => ({ ...s, oil: true, sar: true }))
   }
 
-  const onFocusVessel = (mmsi) => {
-    onSelectVessel(mmsi)
-    setPlaying(true)
-  }
-
-  const onStoryStep = (step) => {
-    setStoryStep(step.id)
-    if (step.id === 'case') {
-      setView('map')
-      setMapFocus(null)
-      return
-    }
-    setView(step.view)
-    if (step.id === 'what') {
-      setShow((s) => ({ ...s, oil: true, sar: true }))
-      setMapFocus('slick')
-    }
-    if (step.id === 'when') {
-      setShow((s) => ({ ...s, oil: true, sar: true }))
-      setMapFocus('slick')
-      setPlaying(false)
-    }
-    if (step.id === 'where') {
-      setOriginMode(true)
-      setShow((s) => ({ ...s, backtrack: true }))
-      setDriftHour(12)
-      setSimTime(t0 - 12 * 3600)
-    }
-    if (step.id === 'who') {
-      setPlaying(true)
-      setShow((s) => ({ ...s, ships: true, tracks: true }))
-      setMapFocus(null)
-    }
-    if (step.id === 'which' && ranking?.ranking?.[0]) {
-      onSelectVessel(ranking.ranking[0].mmsi)
-    }
-    if (step.id === 'why' && ranking?.ranking?.[0]) {
-      onSelectVessel(ranking.ranking[0].mmsi)
-    }
-    if (step.id === 'prove') {
-      setView('evidence')
-    }
-    if (step.id === 'dossier') {
-      setDossierOpen(true)
-    }
-  }
-
-  const syncStoryFromView = (v) => {
-    const map = { map: 'who', detection: 'what', origin: 'where', vessels: 'which', evidence: 'why', report: 'dossier' }
-    if (map[v]) setStoryStep(map[v])
-  }
+  const onTraceOrigin = () => { setView('origin'); setMapMode('origin'); setDriftHour(12) }
+  const onViewOilFlow = () => { setMapMode('oil_flow'); setFlowPlaying(true) }
 
   const shared = {
     caseInfo, detection, manifest, ranking, vessels, vesselsRaw,
-    driftHour, setDriftHour: onDriftHour, onAnimate, simTime,
-    selectedMmsi, onFocusVessel, showMask: show.mask,
-    setShowMask: (v) => setShow((s) => ({ ...s, mask: v })),
+    driftHour, setDriftHour: onDriftHour,
+    onAnimate: onTraceOrigin, simTime,
+    selectedMmsi, onFocusVessel: (m) => { onSelectVessel(m); setPlaying(true) },
+    showMask: show.mask, setShowMask: (v) => setShow((s) => ({ ...s, mask: v })),
     onGenerateDossier: () => setDossierOpen(true),
     onVerifyIntegrity: () => alert('Integrity verified — evidence hashes match sealed bundle.'),
-    originMode, mapFocus, setView,
+    originMode, mapFocus, setView: navigate, userMode, showExplain, setShowExplain,
+    onTraceOrigin, onViewOilFlow, slickProps,
   }
 
   if (!caseInfo || !vessels || !ranking) {
     return (
       <div className="boot-screen">
-        <div className="boot-logo">ORIGIN<b>TRACE</b></div>
-        <div className="boot-sub mono">SAGAR-NETRA · MARINE INTELLIGENCE OS</div>
+        <div className="boot-logo">SAGAR<b>-NET</b></div>
+        <div className="boot-sub">Marine Oil Spill Detection · Origin Reconstruction · Vessel Attribution</div>
         <div className="boot-bar"><div /></div>
       </div>
     )
   }
 
   return (
-    <div className="os-shell">
-      <LeftRail
-        view={view}
-        setView={(v) => { setView(v); syncStoryFromView(v) }}
-        onGenerateDossier={() => { setDossierOpen(true); setStoryStep('dossier') }}
-      />
+    <div className="sn-shell">
+      <LeftRail view={view} setView={navigate} />
 
-      <div className="os-main">
-        <TopStatusBar
-          caseInfo={caseInfo} ranking={ranking} detection={detection}
-          manifest={manifest} replayMode={replayMode} setReplayMode={setReplayMode}
+      <div className="sn-main">
+        <SagarNetHeader
+          caseInfo={caseInfo} detection={detection} manifest={manifest} ranking={ranking}
+          reducedMotion={reducedMotion} setReducedMotion={setReducedMotion}
         />
 
-        <div className="os-workspace">
-          <div className="map-column">
-            <CaseStoryFlow
-              caseInfo={caseInfo} detection={detection} manifest={manifest}
-              ranking={ranking} activeStep={storyStep} onStep={onStoryStep}
-            />
-            <MapView
-              caseInfo={caseInfo} detection={detection} backtrack={backtrack}
-              forecast={forecast} manifest={manifest} vessels={vessels}
-              ranking={ranking} simTime={simTime} driftHour={driftHour}
-              pulse={pulse} show={show} setShow={setShow} tMin={vesselsRaw.t_min}
-              selectedMmsi={selectedMmsi} onSelectVessel={onSelectVessel}
-              onSelectSlick={onSelectSlick} mapFocus={mapFocus}
-              originMode={originMode} setOriginMode={setOriginMode}
-              flowMode={flowMode} setFlowMode={setFlowMode}
-              onTraceBackward={onTraceBackward} onFlowForward={onFlowForward}
-            />
-          </div>
-
-          <IntelligenceSidebar
-            view={view}
-            setView={(v) => { setView(v); syncStoryFromView(v) }}
-            {...shared}
+        <div className="sn-workspace">
+          <MapView
+            caseInfo={caseInfo} detection={detection} backtrack={backtrack}
+            forecast={forecast} manifest={manifest} vessels={vessels}
+            ranking={ranking} simTime={simTime} driftHour={driftHour} flowHour={flowHour}
+            pulse={pulse} show={show} tMin={vesselsRaw.t_min}
+            selectedMmsi={selectedMmsi} onSelectVessel={onSelectVessel}
+            onSelectSlick={onSelectSlick} mapFocus={mapFocus}
+            originMode={originMode} flowMode={flowMode}
+            mapMode={mapMode} setMapMode={setMapMode}
+            flowPlaying={flowPlaying} onFlowPlay={() => setFlowPlaying((p) => !p)}
+            setFlowHour={setFlowHour}
+            onTraceOrigin={onTraceOrigin} onViewOilFlow={onViewOilFlow}
+            reducedMotion={reducedMotion}
           />
+
+          <IntelligenceSidebar view={view} setView={navigate} {...shared} />
         </div>
 
         <TimeBar
           simTime={simTime} tMin={vesselsRaw.t_min} tMax={vesselsRaw.t_max}
-          playing={playing} speed={speed} driftHour={driftHour} driftMax={24}
-          t0={t0} backwardActive={backwardActive} setBackwardActive={setBackwardActive}
+          playing={playing} speed={speed} t0={t0}
+          releaseWindow={manifest?.origin_estimate?.estimated_release_window_utc}
           onPlay={() => setPlaying((p) => !p)} onSpeed={setSpeed}
-          onSimTime={setSimTime} onDriftHour={onDriftHour} onSync={onSync}
+          onSimTime={setSimTime}
         />
       </div>
 
-      <DossierModal open={dossierOpen} onClose={() => setDossierOpen(false)} caseId={caseInfo.case_id} />
+      <DossierModal open={dossierOpen} onClose={() => setDossierOpen(false)} caseId={caseInfo.case_id} manifest={manifest} />
     </div>
   )
 }

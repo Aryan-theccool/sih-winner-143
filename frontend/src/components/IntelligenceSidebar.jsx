@@ -4,9 +4,8 @@ import OriginPanel from './panels/OriginPanel'
 import VesselsPanel from './panels/VesselsPanel'
 import EvidencePanel from './panels/EvidencePanel'
 import CaseReportPanel from './panels/CaseReportPanel'
-import SatelliteCards from './SatelliteCards'
 import VesselIntelCard from './VesselIntelCard'
-import SlickIntelCard from './SlickIntelCard'
+import ExplainAttribution from './ExplainAttribution'
 
 const TABS = [
   { id: 'detection', label: 'DETECTION' },
@@ -19,27 +18,20 @@ const TABS = [
 export default function IntelligenceSidebar(props) {
   const {
     view, setView, mapFocus, selectedMmsi, ranking, vessels, simTime,
-    detection, manifest, caseInfo,
+    detection, manifest, showExplain, setShowExplain,
   } = props
 
-  const tab = ['map', 'detection', 'origin', 'vessels', 'evidence', 'report'].includes(view)
-    ? (view === 'map' ? 'detection' : view)
-    : 'detection'
-
+  const tab = view === 'map' ? 'detection' : view
   const selectedVessel = selectedMmsi && ranking?.ranking?.find((r) => r.mmsi === selectedMmsi)
   const vesselData = vessels?.find((v) => v.mmsi === selectedMmsi)
 
   return (
-    <aside className="intel-sidebar">
-      <div className="is-header">
-        <span className="is-title">INTELLIGENCE</span>
-        <span className="is-case mono">{caseInfo?.case_id}</span>
-      </div>
-
-      <div className="is-tabs">
+    <aside className="sn-panel">
+      <div className="sn-panel-tabs">
         {TABS.map((t) => (
           <button
             key={t.id}
+            type="button"
             className={tab === t.id ? 'active' : ''}
             onClick={() => setView(t.id)}
           >
@@ -47,8 +39,6 @@ export default function IntelligenceSidebar(props) {
           </button>
         ))}
       </div>
-
-      <SatelliteCards detection={detection} caseInfo={caseInfo} />
 
       {mapFocus === 'vessel' && selectedVessel && (
         <VesselIntelCard
@@ -59,17 +49,18 @@ export default function IntelligenceSidebar(props) {
           rank={selectedVessel.rank}
           onViewTrack={() => setView('vessels')}
           onViewEvidence={() => setView('evidence')}
+          onWhy={() => setShowExplain(true)}
         />
       )}
 
-      {mapFocus === 'slick' && (
-        <SlickIntelCard detection={detection} manifest={manifest} />
+      {showExplain && selectedVessel && (
+        <ExplainAttribution candidate={selectedVessel} onClose={() => setShowExplain(false)} />
       )}
 
-      <div className="is-body">
+      <div className="sn-panel-body panel-enter" key={tab}>
         {tab === 'detection' && <DetectionPanel {...props} />}
         {tab === 'origin' && <OriginPanel {...props} />}
-        {tab === 'vessels' && !selectedVessel && <VesselsPanel {...props} />}
+        {tab === 'vessels' && <VesselsPanel {...props} />}
         {tab === 'evidence' && <EvidencePanel {...props} />}
         {tab === 'report' && <CaseReportPanel {...props} />}
       </div>

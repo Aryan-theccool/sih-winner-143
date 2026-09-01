@@ -1,5 +1,5 @@
 import {
-  BitmapLayer, PathLayer, PolygonLayer, ScatterplotLayer, IconLayer,
+  BitmapLayer, PathLayer, PolygonLayer, ScatterplotLayer, IconLayer, TextLayer,
 } from '@deck.gl/layers'
 import { TripsLayer } from '@deck.gl/geo-layers'
 import { PathStyleExtension } from '@deck.gl/extensions'
@@ -118,28 +118,8 @@ export function buildLayers({
   }
 
   if (show.oil && detection) {
-    layers.push(new PolygonLayer({
-      id: 'slicks', data: featToPolygonList(detection.slick),
-      getPolygon: (d) => d.polygon[0],
-      getFillColor: (d) => {
-        const c = CLASS_COLORS[d.props.class] || CLASS_COLORS.ambiguous
-        const a = d.props.class === 'oil_confirmed' ? 90 : 50
-        return [...c, a]
-      },
-      getLineColor: (d) => [...(CLASS_COLORS[d.props.class] || CLASS_COLORS.ambiguous), 255],
-      getLineWidth: 2.5, lineWidthUnits: 'pixels', stroked: true, filled: true, pickable: true,
-      getTooltip: ({ object }) => object &&
-        `${object.props.object_id}\nOil-slick probability ${Math.round(object.props.confidence * 100)}%\n${object.props.area_km2} km²`,
-    }))
-    const obj = detection.summary?.objects?.find((o) => o.class === 'oil_confirmed')
-    if (obj?.centroid) {
-      layers.push(new ScatterplotLayer({
-        id: 'slick-centroid', data: [obj.centroid], getPosition: (d) => d,
-        getRadius: 400, radiusUnits: 'meters',
-        getFillColor: [220, 38, 55, 80], getLineColor: [255, 255, 255, 220],
-        getLineWidth: 2, lineWidthUnits: 'pixels', stroked: true, pickable: false,
-      }))
-    }
+    // slick layers rendered on top — see end of buildLayers()
+    layers._pendingSlick = { detection, mapFocus: hoverInfo?.mapFocus, pulse }
   }
 
   if (backtrack && show.backtrack) {
@@ -215,7 +195,7 @@ export function buildLayers({
   if (vessels && show.ships) {
     const rankOf = {}
     if (ranking) ranking.ranking.slice(0, 3).forEach((r, i) => { rankOf[r.mmsi] = i })
-    const { atlas, mapping } = getShipIconAtlas()
+    const { atlas, mapping, typeKey } = getShipIconAtlas()
 
     if (show.tracks !== false) {
       layers.push(new TripsLayer({
@@ -263,22 +243,47 @@ export function buildLayers({
     layers.push(new IconLayer({
       id: 'ship-icons', data: heads, pickable: true,
       iconAtlas: atlas, iconMapping: mapping,
-      getIcon: () => 'ship',
+      getIcon: (d) => typeKey(d.type),
       getPosition: (d) => d.position,
-      getSize: (d) => Math.min(28, 12 + (d.length_m || 100) / 15),
+      getSize: (d) => {
+        const i = rankOf[d.mmsi]
+        return i !== undefined ? 22 : Math.min(18, 10 + (d.length_m || 100) / 18)
+      },
       getAngle: (d) => -d.heading,
       getColor: (d) => {
         const i = rankOf[d.mmsi]
-        if (i !== undefined) return [...SUSPECT_COLORS[i], 255]
-        return [...vesselTypeColor(d.type), 255]
+        if (i !== undefined) return [255, 255, 255, 255]
+        return [74, 222, 128, 255]
       },
       onClick: hoverInfo?.onClickVessel,
       getTooltip: ({ object }) => {
         if (!object) return null
         const rank = rankOf[object.mmsi]
         const rankLine = rank !== undefined ? `\nAttribution rank: #${rank + 1}` : ''
-        return `${object.name} (${object.mmsi})\n${object.type} · ${object.speed.toFixed(1)} kn · ${Math.round(object.heading)}°${rankLine}\n${object.inGap ? 'AIS GAP / UNOBSERVED' : 'AIS active'}`
+        return `${object.name} (${object.mmsi})\n${object.type} · ${object.speed.toFixed(1)} kn · ${Math.round(object.heading)}°${rankLine}\n${object.inGap ? 'AIS GAP' : 'AIS active'}`
       },
+    }))
+
+    // Vessel name labels — professional tracking style
+    const labelData = heads.slice(0, 24).map((d) => ({
+      ...d,
+      label: `${d.name?.split(' ').slice(-2).join(' ') || d.mmsi} | ${d.speed.toFixed(1)} kn`,
+    }))
+    layers.push(new TextLayer({
+      id: 'vessel-labels',
+      data: labelData,
+      pickable: false,
+      getPosition: (d) => d.position,
+      getText: (d) => d.label,
+      getSize: 11,
+      getColor: [255, 255, 255, 220],
+      getAngle: 0,
+      getTextAnchor: 'start',
+      getAlignmentBaseline: 'bottom',
+      getPixelOffset: [12, -6],
+      fontFamily: 'IBM Plex Mono, monospace',
+      outlineWidth: 2,
+      outlineColor: [0, 0, 0, 200],
     }))
 
     if (selectedMmsi) {
@@ -307,5 +312,66 @@ export function buildLayers({
     }))
   }
 
-  return layers
+  // Oil slick — render on top of vessels so it's visible on the ocean
+  const pending = layers._pendingSlick
+  if (pending) {
+    const { detection: det, mapFocus, pulse: pls } = pending
+    const slickPolys = featToPolygonList(det.slick)
+    const highlighted = mapFocus === 'slick'
+    const confirmed = slickPolys.filter((d) => d.props.class === 'oil_confirmed')
+
+    if (confirmed.length) {
+      // Interior probability gradient — geospatial overlay, not cartoon blob
+      layers.push(new PolygonLayer({
+        id: 'slick-interior', data: confirmed,
+        getPolygon: (d) => d.polygon[0],
+        getFillColor: [90, 95, 100, highlighted ? 130 : 100],
+        getLineColor: [0, 0, 0, 0],
+        stroked: false, filled: true, pickable: false,
+      }))
+    }
+
+    layers.push(new PolygonLayer({
+      id: 'slicks-fill', data: slickPolys,
+      getPolygon: (d) => d.polygon[0],
+      getFillColor: (d) => {
+        if (d.props.class !== 'oil_confirmed') return [148, 163, 184, 40]
+        return [180, 90, 90, highlighted ? 80 : 55]
+      },
+      getLineColor: [0, 0, 0, 0],
+      stroked: false, filled: true, pickable: true,
+      onClick: hoverInfo?.onClickSlick,
+    }))
+
+    layers.push(new PolygonLayer({
+      id: 'slicks', data: slickPolys,
+      getPolygon: (d) => d.polygon[0],
+      getFillColor: [0, 0, 0, 0],
+      getLineColor: (d) => {
+        if (d.props.class === 'oil_confirmed') return [220, 38, 55, 255]
+        return [245, 158, 11, 180]
+      },
+      getLineWidth: (d) => (d.props.class === 'oil_confirmed' ? 2 : 1.5),
+      lineWidthUnits: 'pixels',
+      stroked: true, filled: false, pickable: true,
+      onClick: hoverInfo?.onClickSlick,
+      getTooltip: ({ object }) => object &&
+        `DETECTED SLICK\nOil-slick probability ${Math.round(object.props.confidence * 100)}%\n${object.props.area_km2} km²`,
+    }))
+
+    const obj = det.summary?.objects?.find((o) => o.class === 'oil_confirmed')
+    if (obj?.centroid) {
+      layers.push(new ScatterplotLayer({
+        id: 'slick-centroid', data: [obj.centroid], getPosition: (d) => d,
+        getRadius: 600 + (highlighted ? 200 * Math.sin(pls / 2) : 0),
+        radiusUnits: 'meters',
+        getFillColor: [220, 38, 55, highlighted ? 120 : 70],
+        getLineColor: [255, 255, 255, 255],
+        getLineWidth: 3, lineWidthUnits: 'pixels', stroked: true, pickable: false,
+      }))
+    }
+    delete layers._pendingSlick
+  }
+
+  return layers.filter((l) => l instanceof Object && l.id)
 }

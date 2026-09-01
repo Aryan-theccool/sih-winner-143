@@ -30,7 +30,7 @@ function CandidateCard({ r, rank, selectedMmsi, onFocus, simTime, releaseWindow 
       </div>
 
       {exonerated && (
-        <div className="exonerated-banner">EXONERATED BY TEMPORAL CONSTRAINT</div>
+        <div className="excluded-banner">! TEMPORALLY EXCLUDED — entered region after inferred release window</div>
       )}
 
       {rank === 1 && (

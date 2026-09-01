@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import DeckGL from '@deck.gl/react'
 import { Map as MapLibre } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -17,44 +17,59 @@ const BASEMAP = {
   layers: [{ id: 'satellite', type: 'raster', source: 'satellite', minzoom: 0, maxzoom: 22 }],
 }
 
+const DEFAULT_VIEW = { longitude: 75.727, latitude: 9.357, zoom: 9.2, pitch: 0, bearing: 0, transitionDuration: 0 }
+
 export default function MapView(props) {
   const {
-    caseInfo, show, setShow, originMode, setOriginMode, flowMode, setFlowMode,
-    onTraceBackward, onFlowForward, onSelectVessel, onSelectSlick,
-    selectedMmsi, mapFocus,
+    caseInfo, detection, manifest, mapMode, setMapMode,
+    flowPlaying, onFlowPlay, flowHour, setFlowHour,
+    onSelectVessel, onSelectSlick, mapFocus,
+    onTraceOrigin, onViewOilFlow,
   } = props
 
   const [basemapOk, setBasemapOk] = useState(true)
+  const [viewState, setViewState] = useState(DEFAULT_VIEW)
+
+  useEffect(() => {
+    const obj = detection?.summary?.objects?.find((o) => o.class === 'oil_confirmed')
+    if (obj?.centroid) {
+      setViewState((v) => ({
+        ...v, longitude: obj.centroid[0], latitude: obj.centroid[1],
+        zoom: 9.4, transitionDuration: 900,
+      }))
+    }
+  }, [detection])
+
+  const onClickSlick = useCallback((info) => {
+    onSelectSlick?.(info.object?.props ?? null)
+  }, [onSelectSlick])
 
   const onClick = useCallback((info) => {
     if (info.layer?.id === 'ship-icons' && info.object) {
-      props.onSelectVessel?.(info.object.mmsi)
-    } else if (info.layer?.id === 'slicks') {
-      props.onSelectSlick?.()
+      onSelectVessel?.(info.object.mmsi)
+    } else if (info.layer?.id === 'slicks' || info.layer?.id === 'slicks-fill') {
+      onClickSlick(info)
     } else if (!info.object) {
-      props.onSelectVessel?.(null)
+      onSelectVessel?.(null)
     }
-  }, [props])
+  }, [onSelectVessel, onClickSlick])
 
   const layers = useMemo(
-    () => buildLayers({ ...props, hoverInfo: { onClickVessel: onClick } }),
+    () => buildLayers({ ...props, hoverInfo: { onClickVessel: onClick, onClickSlick, mapFocus } }),
     [props.caseInfo, props.detection, props.backtrack, props.forecast,
      props.manifest, props.vessels, props.ranking, props.simTime,
      props.driftHour, props.pulse, props.show, props.tMin, props.selectedMmsi,
-     props.originMode, props.flowMode],
+     props.originMode, props.flowMode, props.reducedMotion, props.flowHour, mapFocus],
   )
-
-  const coords = caseInfo?.aoi
-    ? `${((caseInfo.aoi.lat_min + caseInfo.aoi.lat_max) / 2).toFixed(2)}°N · ${((caseInfo.aoi.lon_min + caseInfo.aoi.lon_max) / 2).toFixed(2)}°E`
-    : null
 
   return (
     <div className="map-stage">
       <DeckGL
-        initialViewState={{ longitude: 75.85, latitude: 9.35, zoom: 8.1, pitch: 0, bearing: 0 }}
+        viewState={viewState}
+        onViewStateChange={({ viewState: vs }) => setViewState(vs)}
         controller
         layers={layers}
-        style={{ background: '#060a10' }}
+        style={{ background: '#0B0E14' }}
         onClick={onClick}
       >
         {basemapOk && (
@@ -63,15 +78,19 @@ export default function MapView(props) {
       </DeckGL>
 
       <MapChrome
-        show={show} setShow={setShow}
-        originMode={originMode} setOriginMode={setOriginMode}
-        flowMode={flowMode} setFlowMode={setFlowMode}
-        onTraceBackward={onTraceBackward}
-        onFlowForward={onFlowForward}
         caseInfo={caseInfo}
-        coords={coords}
+        detection={detection}
+        manifest={manifest}
+        mapMode={mapMode}
+        setMapMode={setMapMode}
+        viewState={viewState}
+        flowPlaying={flowPlaying}
+        onFlowPlay={onFlowPlay}
+        flowHour={flowHour}
+        setFlowHour={setFlowHour}
+        onTraceOrigin={onTraceOrigin}
+        onViewOilFlow={onViewOilFlow}
       />
-
     </div>
   )
 }

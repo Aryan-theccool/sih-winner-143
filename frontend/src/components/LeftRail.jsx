@@ -1,33 +1,34 @@
 import React from 'react'
 
 const ITEMS = [
-  { id: 'map', icon: '◉', label: 'Map' },
+  { id: 'map', icon: '⊕', label: 'Map' },
   { id: 'detection', icon: '◎', label: 'Detection' },
   { id: 'origin', icon: '↶', label: 'Origin' },
-  { id: 'vessels', icon: '⚓', label: 'Vessels' },
+  { id: 'vessels', icon: '⛵', label: 'Vessels' },
   { id: 'evidence', icon: '⬡', label: 'Evidence' },
   { id: 'report', icon: '▤', label: 'Report' },
 ]
 
-export default function LeftRail({ view, setView, onGenerateDossier }) {
+export default function LeftRail({ view, setView }) {
   return (
-    <nav className="left-rail">
-      <div className="rail-brand">OT</div>
+    <nav className="sn-rail" aria-label="Primary navigation">
       {ITEMS.map((item) => (
         <button
           key={item.id}
-          className={`rail-btn ${view === item.id || (view === 'map' && item.id === 'map') ? 'active' : ''}`}
-          onClick={() => setView(item.id === 'map' ? 'map' : item.id)}
+          type="button"
+          className={`sn-rail-btn ${view === item.id ? 'active' : ''}`}
+          onClick={() => setView(item.id)}
           title={item.label}
+          aria-current={view === item.id ? 'page' : undefined}
         >
-          <span className="rail-icon">{item.icon}</span>
-          <span className="rail-label">{item.label}</span>
+          <span className="sn-rail-icon">{item.icon}</span>
+          <span className="sn-rail-lbl">{item.label}</span>
         </button>
       ))}
-      <div className="rail-spacer" />
-      <button className="rail-btn rail-export" onClick={onGenerateDossier} title="Generate dossier">
-        <span className="rail-icon">⬇</span>
-        <span className="rail-label">Dossier</span>
+      <div className="sn-rail-spacer" />
+      <button type="button" className="sn-rail-btn" title="Settings" aria-label="Settings">
+        <span className="sn-rail-icon">⚙</span>
+        <span className="sn-rail-lbl">Settings</span>
       </button>
     </nav>
   )
