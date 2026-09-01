@@ -1,0 +1,17 @@
+# ---- core pipeline (CPU-only, no GPU needed for the demo) ----
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+shapely>=2.0
+rasterio>=1.3
+netCDF4>=1.6
+scikit-image>=0.22
+pyproj>=3.5
+scikit-learn>=1.4   # cross-val sanity for ranker training
+lightgbm>=4.3
+pillow>=10.0
+reportlab>=4.0
+
+# ---- api ----
+fastapi>=0.110
+uvicorn[standard]>=0.29

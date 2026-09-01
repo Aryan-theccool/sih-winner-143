@@ -1,0 +1,36 @@
+{
+  "engine": "OriginTrace Lagrangian Engine v1.0 (OpenDrift-compatible)",
+  "physics": {
+    "advection": "current + windage*U10 (RK2)",
+    "windage": 0.03,
+    "diffusion_kh_m2s": 8.0,
+    "dt_seconds": 600
+  },
+  "seed_object": "SAR-OBJ-01",
+  "n_particles": 350,
+  "detection_time_utc": "2025-06-12T06:30:00+00:00",
+  "backtrack_hours": 24,
+  "forecast_hours": 12,
+  "origin_estimate": {
+    "lon": 75.63,
+    "lat": 9.35,
+    "estimated_release_window_utc": [
+      "2025-06-11T08:30:00+00:00",
+      "2025-06-11T16:30:00+00:00"
+    ],
+    "note_synthetic_case_truth": {
+      "true_origin": [
+        75.62,
+        9.35
+      ],
+      "true_release": "2025-06-11T12:30:00+00:00",
+      "origin_error_km": 1.1
+    }
+  },
+  "input_sha256": {
+    "sar_scene": "8aa5c7904dcd2c22e6059b7ae6809ad870a4c8f5f07e9bebfac7cb8840f8e9bc",
+    "wind_nc": "28688a3e04828a1ee075986d025a92ac8c5f32cb03f0a9e5450cc761cacfd579",
+    "currents_nc": "aea628bf396268a8e4faedd8469f9764a6e427beeba55fb513dc4c8ae1812e03",
+    "slick_polygons": "6ad14d8e9d0de45fec5e48b962dd38d430bda660d2fd285664a4bb28e7e6af14"
+  }
+}

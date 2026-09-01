@@ -1,0 +1,19 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# node
+node_modules/
+frontend/dist/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
+
+# large real-data drops (users replace the synthetic case with real scenes)
+casefiles/*/inputs/sar/*.tif
+!casefiles/KERALA_2025_CASE01/inputs/sar/scene.tif

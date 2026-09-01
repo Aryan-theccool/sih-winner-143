@@ -1,0 +1,21 @@
+{
+  "scene_id": "S1A_IW_GRDH_1SDV_20250612T063000_KERALA_SYNTH",
+  "platform": "Sentinel-1A (synthetic fallback scene \u2014 Zenodo-mode)",
+  "note": "Physics-driven synthetic SAR stand-in for the Copernicus Data Space Sentinel-1 GRD IW scene; replace with a real scene for ops.",
+  "acquisition_time_utc": "2025-06-12T06:30:00+00:00",
+  "mode": "IW",
+  "polarization": "VV+VH",
+  "pass": "descending",
+  "bounds": {
+    "lon_min": 75.0,
+    "lon_max": 77.3,
+    "lat_min": 8.5,
+    "lat_max": 10.5
+  },
+  "shape": {
+    "nx": 460,
+    "ny": 400
+  },
+  "resolution_m": 500,
+  "preview_png": "scene_preview.png"
+}

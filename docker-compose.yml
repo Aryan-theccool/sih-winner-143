@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    container_name: origintrace
+    ports:
+      - "8000:8000"
+    # Everything (data, UI, API) is inside the image: demo works with
+    # the network cable unplugged.
+    restart: unless-stopped
+
+  # Optional dev-mode services (hot reload) are unnecessary for the demo:
+  #   uvicorn backend.main:app --reload --port 8000
+  #   npm run dev            (vite dev server, /api proxied to 8000)

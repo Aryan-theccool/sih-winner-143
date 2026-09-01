@@ -1,0 +1,4 @@
+# Optional GPU path — real U-Net training on real Sentinel-1 scenes.
+# CPU demo works without these (physics-based detector is used instead).
+torch>=2.2 --index-url https://download.pytorch.org/whl/cu118
+segmentation-models-pytorch>=0.3

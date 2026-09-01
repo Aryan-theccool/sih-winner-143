@@ -1,0 +1,1308 @@
+{
+ "generated_at": "2025-06-12T06:30:00+00:00",
+ "model": "LightGBM binary classifier (synthetic-calibrated) + TreeSHAP (pred_contrib) explanations",
+ "release_window_utc": [
+  "2025-06-11T06:30:00+00:00",
+  "2025-06-12T02:30:00+00:00"
+ ],
+ "n_vessels": 20,
+ "ranking": [
+  {
+   "mmsi": "419000001",
+   "name": "MT KAVERI STAR",
+   "type": "Crude Oil Tanker",
+   "flag": "IN",
+   "length_m": 229,
+   "score": 1.0,
+   "features": {
+    "origin_mass": 0.885,
+    "deep_hour_mass": 0.549,
+    "gap_overlap_h": 6.17,
+    "dump_profile": 1.0,
+    "cpa_km": 0.4,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": 2.541,
+    "deep_hour_mass": 5.701,
+    "gap_overlap_h": 3.474,
+    "dump_profile": 2.628,
+    "cpa_km": 4.58,
+    "late_arrival": 0.041
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "raises",
+     "weight": 5.701,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.549
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "raises",
+     "weight": 4.58,
+     "text": "closest approach 0 km to the reconstructed release locus",
+     "value": 0.4
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "raises",
+     "weight": 3.474,
+     "text": "vessel went dark for 6.2 h inside the release window",
+     "value": 6.17
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 2.628,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 1.0
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "raises",
+     "weight": 2.541,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.885
+    }
+   ],
+   "verdict": "PRIMARY SUSPECT",
+   "exonerated": false,
+   "rank": 1,
+   "top3": true
+  },
+  {
+   "mmsi": "419000002",
+   "name": "MV MALABAR TRADER",
+   "type": "Bulk Carrier",
+   "flag": "IN",
+   "length_m": 189,
+   "score": 0.79,
+   "features": {
+    "origin_mass": 0.826,
+    "deep_hour_mass": 1.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 0.9,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": 1.685,
+    "deep_hour_mass": 8.143,
+    "gap_overlap_h": -0.508,
+    "dump_profile": -5.012,
+    "cpa_km": 4.89,
+    "late_arrival": 0.055
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "raises",
+     "weight": 8.143,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 1.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -5.012,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "raises",
+     "weight": 4.89,
+     "text": "closest approach 1 km to the reconstructed release locus",
+     "value": 0.9
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "raises",
+     "weight": 1.685,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.826
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.508,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "SUSPECT \u2014 CORROBORATE",
+   "exonerated": false,
+   "rank": 2,
+   "top3": true
+  },
+  {
+   "mmsi": "419000003",
+   "name": "FV OCEAN PEARL",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 24,
+   "score": 0.001,
+   "features": {
+    "origin_mass": 1.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.384,
+    "cpa_km": 4.6,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": 3.508,
+    "deep_hour_mass": -5.07,
+    "gap_overlap_h": -0.588,
+    "dump_profile": -0.137,
+    "cpa_km": 2.665,
+    "late_arrival": 0.057
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -5.07,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "raises",
+     "weight": 3.508,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 1.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "raises",
+     "weight": 2.665,
+     "text": "closest approach 5 km to the reconstructed release locus",
+     "value": 4.6
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.588,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "CLEARED",
+   "exonerated": false,
+   "rank": 3,
+   "top3": true
+  },
+  {
+   "mmsi": "419000004",
+   "name": "MT COROMANDEL GRACE",
+   "type": "Product Tanker",
+   "flag": "IN",
+   "length_m": 174,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 999.0,
+    "late_arrival": 1.0
+   },
+   "shap": {
+    "origin_mass": -1.099,
+    "deep_hour_mass": -1.751,
+    "gap_overlap_h": -0.265,
+    "dump_profile": -1.141,
+    "cpa_km": -1.52,
+    "late_arrival": -0.118
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.751,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.52,
+     "text": "closest approach 999 km to the reconstructed release locus",
+     "value": 999.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.141,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.099,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.265,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 4,
+   "top3": false
+  },
+  {
+   "mmsi": "419000005",
+   "name": "KMV NEELAKANTA",
+   "type": "Passenger Ferry",
+   "flag": "IN",
+   "length_m": 86,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 98.1,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.21,
+    "deep_hour_mass": -1.753,
+    "gap_overlap_h": -0.262,
+    "dump_profile": -1.168,
+    "cpa_km": -1.514,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.753,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.514,
+     "text": "closest approach 98 km to the reconstructed release locus",
+     "value": 98.1
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.21,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.168,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 5,
+   "top3": false
+  },
+  {
+   "mmsi": "419000006",
+   "name": "MV PERIYAR EXPRESS",
+   "type": "Container Ship",
+   "flag": "IN",
+   "length_m": 210,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 39.7,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.21,
+    "deep_hour_mass": -1.753,
+    "gap_overlap_h": -0.262,
+    "dump_profile": -1.168,
+    "cpa_km": -1.514,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.753,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.514,
+     "text": "closest approach 40 km to the reconstructed release locus",
+     "value": 39.7
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.21,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.168,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "CLEARED",
+   "exonerated": false,
+   "rank": 6,
+   "top3": false
+  },
+  {
+   "mmsi": "419000007",
+   "name": "MV MALABAR COAST",
+   "type": "General Cargo",
+   "flag": "IN",
+   "length_m": 140,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 1.0,
+    "cpa_km": 89.0,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.63,
+    "deep_hour_mass": -2.406,
+    "gap_overlap_h": -0.213,
+    "dump_profile": 4.189,
+    "cpa_km": -1.711,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 4.189,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 1.0
+    },
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.406,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.711,
+     "text": "closest approach 89 km to the reconstructed release locus",
+     "value": 89.0
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.63,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.213,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 7,
+   "top3": false
+  },
+  {
+   "mmsi": "419000008",
+   "name": "FV SEA BLOSSOM",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 21,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.639,
+    "cpa_km": 72.8,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.574,
+    "deep_hour_mass": -2.297,
+    "gap_overlap_h": -0.263,
+    "dump_profile": 0.398,
+    "cpa_km": -1.778,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.297,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.778,
+     "text": "closest approach 73 km to the reconstructed release locus",
+     "value": 72.8
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.574,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 0.398,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.639
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.263,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 8,
+   "top3": false
+  },
+  {
+   "mmsi": "419000009",
+   "name": "MV KONKAN STAR",
+   "type": "General Cargo",
+   "flag": "IN",
+   "length_m": 118,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 35.7,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.21,
+    "deep_hour_mass": -1.753,
+    "gap_overlap_h": -0.262,
+    "dump_profile": -1.168,
+    "cpa_km": -1.514,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.753,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.514,
+     "text": "closest approach 36 km to the reconstructed release locus",
+     "value": 35.7
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.21,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.168,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "CLEARED",
+   "exonerated": false,
+   "rank": 9,
+   "top3": false
+  },
+  {
+   "mmsi": "419000010",
+   "name": "FV BLUE FIN",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 19,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.804,
+    "cpa_km": 56.3,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.665,
+    "deep_hour_mass": -2.242,
+    "gap_overlap_h": -0.231,
+    "dump_profile": 1.599,
+    "cpa_km": -1.847,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.242,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.847,
+     "text": "closest approach 56 km to the reconstructed release locus",
+     "value": 56.3
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.665,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 1.599,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.804
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.231,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 10,
+   "top3": false
+  },
+  {
+   "mmsi": "419000011",
+   "name": "MT SPICE ROUTE",
+   "type": "Chemical Tanker",
+   "flag": "SG",
+   "length_m": 145,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 43.7,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.21,
+    "deep_hour_mass": -1.753,
+    "gap_overlap_h": -0.262,
+    "dump_profile": -1.168,
+    "cpa_km": -1.514,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.753,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.514,
+     "text": "closest approach 44 km to the reconstructed release locus",
+     "value": 43.7
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.21,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.168,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "CLEARED",
+   "exonerated": false,
+   "rank": 11,
+   "top3": false
+  },
+  {
+   "mmsi": "419000012",
+   "name": "FV SAGAR RANI",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 22,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.518,
+    "cpa_km": 113.8,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.459,
+    "deep_hour_mass": -2.25,
+    "gap_overlap_h": -0.269,
+    "dump_profile": 0.162,
+    "cpa_km": -1.708,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.25,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.708,
+     "text": "closest approach 114 km to the reconstructed release locus",
+     "value": 113.8
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.459,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.269,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 0.162,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.518
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 12,
+   "top3": false
+  },
+  {
+   "mmsi": "419000013",
+   "name": "MV ARABIAN DAWN",
+   "type": "Bulk Carrier",
+   "flag": "MH",
+   "length_m": 200,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 23.7,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.39,
+    "deep_hour_mass": -2.232,
+    "gap_overlap_h": -0.345,
+    "dump_profile": -1.367,
+    "cpa_km": -0.478,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.232,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.39,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.367,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -0.478,
+     "text": "closest approach 24 km to the reconstructed release locus",
+     "value": 23.7
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.345,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "CLEARED",
+   "exonerated": false,
+   "rank": 13,
+   "top3": false
+  },
+  {
+   "mmsi": "419000014",
+   "name": "TUG ALAPPUZHA",
+   "type": "Tug",
+   "flag": "IN",
+   "length_m": 32,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 1.0,
+    "cpa_km": 62.8,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.63,
+    "deep_hour_mass": -2.406,
+    "gap_overlap_h": -0.213,
+    "dump_profile": 4.189,
+    "cpa_km": -1.711,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 4.189,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 1.0
+    },
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.406,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.711,
+     "text": "closest approach 63 km to the reconstructed release locus",
+     "value": 62.8
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.63,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.213,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 14,
+   "top3": false
+  },
+  {
+   "mmsi": "419000015",
+   "name": "FV KARAVALLI",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 20,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.711,
+    "cpa_km": 62.5,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.614,
+    "deep_hour_mass": -2.368,
+    "gap_overlap_h": -0.256,
+    "dump_profile": 0.73,
+    "cpa_km": -1.889,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.368,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.889,
+     "text": "closest approach 62 km to the reconstructed release locus",
+     "value": 62.5
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.614,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 0.73,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.711
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.256,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 15,
+   "top3": false
+  },
+  {
+   "mmsi": "419000016",
+   "name": "MV MALDIVES TRADER",
+   "type": "Container Ship",
+   "flag": "MV",
+   "length_m": 160,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 30.1,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.329,
+    "deep_hour_mass": -2.019,
+    "gap_overlap_h": -0.339,
+    "dump_profile": -1.299,
+    "cpa_km": -0.842,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.019,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.329,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.299,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -0.842,
+     "text": "closest approach 30 km to the reconstructed release locus",
+     "value": 30.1
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.339,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "CLEARED",
+   "exonerated": false,
+   "rank": 16,
+   "top3": false
+  },
+  {
+   "mmsi": "419000017",
+   "name": "FV DEVI PRASAD",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 18,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.803,
+    "cpa_km": 102.4,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.665,
+    "deep_hour_mass": -2.242,
+    "gap_overlap_h": -0.231,
+    "dump_profile": 1.599,
+    "cpa_km": -1.847,
+    "late_arrival": 0.012
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.242,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.847,
+     "text": "closest approach 102 km to the reconstructed release locus",
+     "value": 102.4
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.665,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 1.599,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.803
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.231,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 17,
+   "top3": false
+  },
+  {
+   "mmsi": "419000018",
+   "name": "MV LAKSHADWEEP SEA",
+   "type": "Ro-Ro Cargo",
+   "flag": "IN",
+   "length_m": 122,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 47.7,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.21,
+    "deep_hour_mass": -1.753,
+    "gap_overlap_h": -0.262,
+    "dump_profile": -1.168,
+    "cpa_km": -1.514,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.753,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.514,
+     "text": "closest approach 48 km to the reconstructed release locus",
+     "value": 47.7
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.21,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.168,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 18,
+   "top3": false
+  },
+  {
+   "mmsi": "419000019",
+   "name": "DREDGER CHAKRAM",
+   "type": "Dredger",
+   "flag": "IN",
+   "length_m": 95,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.0,
+    "cpa_km": 89.2,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.21,
+    "deep_hour_mass": -1.753,
+    "gap_overlap_h": -0.262,
+    "dump_profile": -1.168,
+    "cpa_km": -1.514,
+    "late_arrival": 0.009
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -1.753,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.514,
+     "text": "closest approach 89 km to the reconstructed release locus",
+     "value": 89.2
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.21,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "lowers",
+     "weight": -1.168,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.0
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 19,
+   "top3": false
+  },
+  {
+   "mmsi": "419000020",
+   "name": "FV MONSOON WING",
+   "type": "Fishing",
+   "flag": "IN",
+   "length_m": 23,
+   "score": 0.0,
+   "features": {
+    "origin_mass": 0.0,
+    "deep_hour_mass": 0.0,
+    "gap_overlap_h": 0.0,
+    "dump_profile": 0.679,
+    "cpa_km": 52.6,
+    "late_arrival": 0.0
+   },
+   "shap": {
+    "origin_mass": -1.584,
+    "deep_hour_mass": -2.309,
+    "gap_overlap_h": -0.262,
+    "dump_profile": 0.421,
+    "cpa_km": -1.777,
+    "late_arrival": 0.011
+   },
+   "reasons": [
+    {
+     "feature": "deep_hour_mass",
+     "direction": "lowers",
+     "weight": -2.309,
+     "text": "position coincides with the cloud at release-relevant hours",
+     "value": 0.0
+    },
+    {
+     "feature": "cpa_km",
+     "direction": "lowers",
+     "weight": -1.777,
+     "text": "closest approach 53 km to the reconstructed release locus",
+     "value": 52.6
+    },
+    {
+     "feature": "origin_mass",
+     "direction": "lowers",
+     "weight": -1.584,
+     "text": "track intersects the reconstructed origin cloud at plausible times",
+     "value": 0.0
+    },
+    {
+     "feature": "dump_profile",
+     "direction": "raises",
+     "weight": 0.421,
+     "text": "best 3 h sub-window shows slow, straight-run steaming",
+     "value": 0.679
+    },
+    {
+     "feature": "gap_overlap_h",
+     "direction": "lowers",
+     "weight": -0.262,
+     "text": "vessel went dark for 0.0 h inside the release window",
+     "value": 0.0
+    }
+   ],
+   "verdict": "EXONERATED",
+   "exonerated": true,
+   "rank": 20,
+   "top3": false
+  }
+ ],
+ "synthetic_case_truth": {
+  "true_polluter": "419000001 (MT KAVERI STAR)",
+  "note": "demo case is synthetic; truth known by construction"
+ }
+}

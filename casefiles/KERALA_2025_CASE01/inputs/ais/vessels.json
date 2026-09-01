@@ -1,0 +1,174 @@
+{
+  "vessels": [
+    {
+      "mmsi": "419000001",
+      "name": "MT KAVERI STAR",
+      "type": "Crude Oil Tanker",
+      "flag": "IN",
+      "length_m": 229,
+      "ais_gaps": [
+        {
+          "start": "2025-06-11T10:30:00+00:00",
+          "end": "2025-06-11T16:30:00+00:00"
+        }
+      ]
+    },
+    {
+      "mmsi": "419000002",
+      "name": "MV MALABAR TRADER",
+      "type": "Bulk Carrier",
+      "flag": "IN",
+      "length_m": 189,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000003",
+      "name": "FV OCEAN PEARL",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 24,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000004",
+      "name": "MT COROMANDEL GRACE",
+      "type": "Product Tanker",
+      "flag": "IN",
+      "length_m": 174,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000005",
+      "name": "KMV NEELAKANTA",
+      "type": "Passenger Ferry",
+      "flag": "IN",
+      "length_m": 86,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000006",
+      "name": "MV PERIYAR EXPRESS",
+      "type": "Container Ship",
+      "flag": "IN",
+      "length_m": 210,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000007",
+      "name": "MV MALABAR COAST",
+      "type": "General Cargo",
+      "flag": "IN",
+      "length_m": 140,
+      "ais_gaps": [
+        {
+          "start": "2025-06-10T14:30:00+00:00",
+          "end": "2025-06-10T18:30:00+00:00"
+        }
+      ]
+    },
+    {
+      "mmsi": "419000008",
+      "name": "FV SEA BLOSSOM",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 21,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000009",
+      "name": "MV KONKAN STAR",
+      "type": "General Cargo",
+      "flag": "IN",
+      "length_m": 118,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000010",
+      "name": "FV BLUE FIN",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 19,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000011",
+      "name": "MT SPICE ROUTE",
+      "type": "Chemical Tanker",
+      "flag": "SG",
+      "length_m": 145,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000012",
+      "name": "FV SAGAR RANI",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 22,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000013",
+      "name": "MV ARABIAN DAWN",
+      "type": "Bulk Carrier",
+      "flag": "MH",
+      "length_m": 200,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000014",
+      "name": "TUG ALAPPUZHA",
+      "type": "Tug",
+      "flag": "IN",
+      "length_m": 32,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000015",
+      "name": "FV KARAVALLI",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 20,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000016",
+      "name": "MV MALDIVES TRADER",
+      "type": "Container Ship",
+      "flag": "MV",
+      "length_m": 160,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000017",
+      "name": "FV DEVI PRASAD",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 18,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000018",
+      "name": "MV LAKSHADWEEP SEA",
+      "type": "Ro-Ro Cargo",
+      "flag": "IN",
+      "length_m": 122,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000019",
+      "name": "DREDGER CHAKRAM",
+      "type": "Dredger",
+      "flag": "IN",
+      "length_m": 95,
+      "ais_gaps": []
+    },
+    {
+      "mmsi": "419000020",
+      "name": "FV MONSOON WING",
+      "type": "Fishing",
+      "flag": "IN",
+      "length_m": 23,
+      "ais_gaps": []
+    }
+  ]
+}

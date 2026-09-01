@@ -1,0 +1,34 @@
+{
+  "scene_id": "S1A_IW_GRDH_1SDV_20250612T063000_KERALA_SYNTH",
+  "acquisition_time_utc": "2025-06-12T06:30:00+00:00",
+  "detector": "physics-based adaptive-threshold SAR dark-spot detector",
+  "ocean_median_db": -0.02,
+  "threshold_db": -1.7,
+  "n_objects": 2,
+  "objects": [
+    {
+      "object_id": "SAR-OBJ-01",
+      "class": "oil_confirmed",
+      "confidence": 0.77,
+      "area_km2": 11.0,
+      "contrast_db": 2.48,
+      "wind_ms": 7.2,
+      "centroid": [
+        75.72795,
+        9.35669
+      ]
+    },
+    {
+      "object_id": "SAR-OBJ-02",
+      "class": "look_alike",
+      "confidence": 0.35,
+      "area_km2": 29.8,
+      "contrast_db": 1.86,
+      "wind_ms": 1.7,
+      "centroid": [
+        76.30068,
+        8.80328
+      ]
+    }
+  ]
+}
